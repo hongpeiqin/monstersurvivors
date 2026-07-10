@@ -1,6 +1,6 @@
 {
   "build": "1.3.0",
-  "deployment_revision": 2,
+  "deployment_revision": 3,
   "redeployed_on": "2026-07-10",
   "source_bytes": 125599,
   "gzip_bytes": 28173,
