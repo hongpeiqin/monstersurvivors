@@ -1,0 +1,45 @@
+{
+  "build": "1.3.0",
+  "source_bytes": 125599,
+  "gzip_bytes": 28173,
+  "base64_bytes": 37564,
+  "source_sha256": "b76c342fb1fe142f2781fcbf22750d3bb2d627b961644ae834140423dc4b93bc",
+  "gzip_sha256": "4b8969d9b5ec88e46153971f1d5be922ea23d55fd00488b07e8c1516dfe7ffea",
+  "chunks": [
+    {
+      "file": "p00.txt",
+      "bytes": 5367,
+      "sha256": "8274fb74a79155341a5c923fe975e6bb2844ca446bc8104fb94baec51d1770de"
+    },
+    {
+      "file": "p01.txt",
+      "bytes": 5367,
+      "sha256": "28e09bbd5e8bec6f74203c36f42e1fa8c2d05e712c22c2aa271e3dc3aea9c82b"
+    },
+    {
+      "file": "p02.txt",
+      "bytes": 5367,
+      "sha256": "590356dec2d2008b123fbe823386fefcca33aaea5699e6722e562df0b3760bfa"
+    },
+    {
+      "file": "p03.txt",
+      "bytes": 5367,
+      "sha256": "4bdb8b5c3224f1b176e76f3bc7a3d03fb82bf117029e15fb3b20d04d778d85a6"
+    },
+    {
+      "file": "p04.txt",
+      "bytes": 5367,
+      "sha256": "c235b550f6cb7d35dc4fb7d24eb30e855948432944ae63ebcc222b126aa4d092"
+    },
+    {
+      "file": "p05.txt",
+      "bytes": 5367,
+      "sha256": "da3e55fc37130f23b61d0e7517fc2462582cbae2af879dd3b32bdb4548ef509b"
+    },
+    {
+      "file": "p06.txt",
+      "bytes": 5362,
+      "sha256": "61564016e8ed71caf4f8ca14acd468292a0f7a95d954b009a09f7b65191f437b"
+    }
+  ]
+}
