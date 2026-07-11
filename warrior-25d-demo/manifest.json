@@ -1,0 +1,15 @@
+{
+  "name": "2.5D 八方向战士 Demo",
+  "build": "74b2f32",
+  "sourceSha256": "29850c3b1a174b22539d282c5d200183bb850326ea4dcf1dd8f5241a8e362e33",
+  "encoding": "base64-utf8",
+  "chunks": [
+    "payload/p00.txt",
+    "payload/p01.txt",
+    "payload/p02.txt",
+    "payload/p03.txt",
+    "payload/p04.txt",
+    "payload/p05.txt",
+    "payload/p06.txt"
+  ]
+}
