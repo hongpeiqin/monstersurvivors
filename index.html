@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="theme-color" content="#02030b">
-  <meta name="description" content="NEON STRIKE V2：粒子打击、程序化配乐、战斗 Buff、独立音频/震动/界面抖动设置，以及自适应分帧粒子调度。">
-  <title>NEON STRIKE V2 · 星环战线</title>
+  <meta name="description" content="NEON STRIKE V2：粒子打击、程序化配乐、战斗 Buff、独立音频/震动/界面抖动设置、自适应分帧粒子调度与移动端视口稳定修复。">
+  <title>NEON STRIKE V2 · Build 1.3.1</title>
   <style>
     html,body{width:100%;height:100%;margin:0;background:#02030b;color:#fff;font:14px system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
     #boot{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,#102354 0,#05091a 34%,#02030b 72%)}
@@ -16,13 +16,13 @@
   </style>
 </head>
 <body>
-  <div id="boot"><div class="loader">正在装载星际战场<div class="fallback" id="status">初始化粒子调度器与声场…</div></div></div>
+  <div id="boot"><div class="loader">正在装载星际战场<div class="fallback" id="status">校准移动视口与粒子调度器…</div></div></div>
   <script>
   (async()=>{
     const status=document.getElementById('status');
-    const build='1.3.0-b76c342f';
+    const build='1.3.1-e721c8e1';
     try{
-      const files=['neon-strike-v2/payload/p00.txt','neon-strike-v2/payload/p01.txt','neon-strike-v2/payload/p02.txt','neon-strike-v2/payload/p03.txt','neon-strike-v2/payload/p04.txt','neon-strike-v2/payload/p05.txt','neon-strike-v2/payload/p06.txt'].map(file=>`${file}?v=${build}`);
+      const files=["neon-strike-v2/payload/p00.txt", "neon-strike-v2/payload/p01.txt", "neon-strike-v2/payload/p02.txt", "neon-strike-v2/payload/p03.txt", "neon-strike-v2/payload/p04.txt", "neon-strike-v2/payload/p05.txt", "neon-strike-v2/payload/p06.txt"].map(file=>`${file}?v=${build}`);
       const parts=[];
       for(let index=0;index<files.length;index++){
         status.textContent=`同步战斗模块 ${index+1}/${files.length}`;
@@ -30,20 +30,14 @@
         if(!response.ok) throw new Error(`${files[index]}: HTTP ${response.status}`);
         parts.push(await response.text());
       }
-      if(typeof DecompressionStream==='undefined'){
-        location.replace('./neon-strike-v2/'+`?v=${build}`);
-        return;
-      }
+      if(typeof DecompressionStream==='undefined'){location.replace(`./neon-strike-v2/source.html?v=${build}`);return}
       status.textContent='启动跃迁引擎…';
       const bytes=Uint8Array.from(atob(parts.join('')),char=>char.charCodeAt(0));
       const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-      document.open();
-      document.write(html);
-      document.close();
+      document.open();document.write(html);document.close();
     }catch(error){
       console.error(error);
-      const boot=document.getElementById('boot');
-      boot.innerHTML=`<div class="loader">载入失败<div class="fallback">${String(error.message||error)}</div><a class="fallback" href="./neon-strike-v2/?v=${build}">打开备用游戏入口</a></div>`;
+      document.getElementById('boot').innerHTML=`<div class="loader">载入失败<div class="fallback">${String(error.message||error)}</div><a class="fallback" href="./neon-strike-v2/source.html?v=${build}">打开备用游戏入口</a></div>`;
     }
   })();
   </script>
