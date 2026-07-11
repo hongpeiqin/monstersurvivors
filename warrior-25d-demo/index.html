@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c1720" />
+  <title>2.5D 八方向战士 Demo · 正在载入</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#0c1720;color:#eef8ff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    body{display:grid;place-items:center;overflow:hidden}
+    main{text-align:center;padding:24px}
+    .blade{width:72px;height:72px;margin:0 auto 20px;border-radius:50%;border:2px solid rgba(142,230,197,.25);border-top-color:#8ee6c5;box-shadow:0 0 28px rgba(93,223,255,.3);animation:spin .8s linear infinite}
+    strong{display:block;font-size:18px;letter-spacing:.12em}
+    p{margin:10px 0 0;color:#a9c4d4;font-size:13px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <main><div class="blade"></div><strong>正在装配战场</strong><p id="state">读取游戏模块…</p></main>
+  <script>
+    (async () => {
+      const state = document.getElementById('state');
+      const build = '74b2f32-29850c3b';
+      try {
+        const manifestResponse = await fetch(`manifest.json?v=${build}`, { cache: 'no-store' });
+        if (!manifestResponse.ok) throw new Error(`manifest HTTP ${manifestResponse.status}`);
+        const manifest = await manifestResponse.json();
+        const parts = [];
+        for (let index = 0; index < manifest.chunks.length; index++) {
+          state.textContent = `读取游戏模块 ${index + 1}/${manifest.chunks.length}`;
+          const response = await fetch(`${manifest.chunks[index]}?v=${build}`, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`${manifest.chunks[index]} HTTP ${response.status}`);
+          parts.push((await response.text()).trim());
+        }
+        state.textContent = '启动战斗循环…';
+        const binary = atob(parts.join(''));
+        const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        const html = new TextDecoder('utf-8').decode(bytes);
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        console.error(error);
+        state.textContent = `载入失败：${String(error.message || error)}`;
+      }
+    })();
+  </script>
+</body>
+</html>
