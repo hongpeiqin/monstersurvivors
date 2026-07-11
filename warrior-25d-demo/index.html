@@ -20,7 +20,7 @@
   <script>
     (async () => {
       const state = document.getElementById('state');
-      const build = '74b2f32-29850c3b';
+      const build = '3721a21-442bc111';
       try {
         const manifestResponse = await fetch(`manifest.json?v=${build}`, { cache: 'no-store' });
         if (!manifestResponse.ok) throw new Error(`manifest HTTP ${manifestResponse.status}`);
@@ -32,9 +32,12 @@
           if (!response.ok) throw new Error(`${manifest.chunks[index]} HTTP ${response.status}`);
           parts.push((await response.text()).trim());
         }
-        state.textContent = '启动战斗循环…';
+        state.textContent = '校验并启动战斗循环…';
         const binary = atob(parts.join(''));
         const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+          .map(value => value.toString(16).padStart(2, '0')).join('');
+        if (digest !== manifest.sourceSha256) throw new Error('源码校验失败');
         const html = new TextDecoder('utf-8').decode(bytes);
         document.open();
         document.write(html);
