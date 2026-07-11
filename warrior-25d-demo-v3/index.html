@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07121a">
+  <meta name="description" content="2.5D 八方向战士战斗 Demo，包含粒子特效开关、自适应分帧调度、持续刷怪、技能与程序化音频。">
+  <title>霜刃战场 · 2.5D 战士 Demo v2.1.1</title>
+  <link rel="stylesheet" href="../warrior-25d-demo-v2/style.css?v=2.1.1">
+</head>
+<body>
+  <canvas id="game" aria-label="2.5D 战斗场景"></canvas>
+  <section id="hud" class="glass" aria-label="战斗状态">
+    <div class="hud-row"><strong>霜刃战士</strong><span id="directionText">面向：南</span></div>
+    <div class="hp-track"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
+    <div class="hud-row stats"><span>击破 <b id="killsText">0</b></span><span id="perfText">性能：轻载</span></div>
+  </section>
+  <div id="title"><strong>霜刃战场</strong><span>八方向 · 无限刷怪 · 自适应调度</span></div>
+  <button id="settingsButton" class="icon-button glass" type="button" aria-label="打开设置">⚙</button>
+  <div id="joystick" class="control-zone" aria-label="八方向移动摇杆">
+    <div class="joystick-ring"><div id="joystickKnob"></div></div><span>移动</span>
+  </div>
+  <div id="actions" class="control-zone" aria-label="技能按钮">
+    <button class="skill secondary" data-action="slash" type="button"><span class="skill-icon">刃</span><b>裂空斩</b><small>Q</small><i class="cooldown"></i></button>
+    <button class="skill secondary" data-action="spin" type="button"><span class="skill-icon">旋</span><b>旋风斩</b><small>E</small><i class="cooldown"></i></button>
+    <button class="skill secondary" data-action="dash" type="button"><span class="skill-icon">突</span><b>突进</b><small>R</small><i class="cooldown"></i></button>
+    <button class="skill primary" data-action="attack" type="button"><span class="skill-icon">斩</span><b>普通攻击</b><small>J / 空格</small><i class="cooldown"></i></button>
+  </div>
+  <div id="settingsBackdrop" hidden>
+    <section id="settingsPanel" class="glass" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header><div><strong id="settingsTitle">战场设置</strong><span>低配设备终于不用靠意志力渲染。</span></div><button id="closeSettings" type="button" aria-label="关闭设置">×</button></header>
+      <label class="setting-row range-row"><span><b>背景音乐</b><small>程序化循环配乐</small></span><output id="bgmValue">45%</output><input id="bgmVolume" type="range" min="0" max="1" step="0.01" value="0.45"></label>
+      <label class="setting-row range-row"><span><b>攻击音效</b><small>挥刀、命中、技能与受伤</small></span><output id="sfxValue">70%</output><input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.70"></label>
+      <label class="setting-row switch-row" for="particlesToggle"><span><b>粒子特效</b><small>关闭后停止生成、更新和绘制粒子，并立即清空存量</small></span><input id="particlesToggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
+      <label class="setting-row switch-row" for="muteToggle"><span><b>全部静音</b><small>也可按 M 快速切换</small></span><input id="muteToggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
+      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理会按帧轮转。移动与攻击判定仍逐帧执行，不拿操作手感祭天。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
+      <footer>桌面：WASD / 方向键移动，J 或空格攻击，Q/E/R 技能，V 显示调度信息。</footer>
+    </section>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="../warrior-25d-demo-v2/js/main-2.1.1.js?v=2.1.1"></script>
+</body>
+</html>
