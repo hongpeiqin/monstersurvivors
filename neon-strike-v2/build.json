@@ -1,0 +1,18 @@
+{
+  "build": "1.3.1",
+  "tag": "1.3.1-e721c8e1",
+  "source_bytes": 129906,
+  "gzip_bytes": 29059,
+  "base64_bytes": 38748,
+  "source_sha256": "e721c8e1a35aeea14c275452788330cb0640a3b75355d9f2a7ef32bda3e8f04b",
+  "gzip_sha256": "f9b555242da98e19ca814bb004f080706e038c568a6a6b389ddf27c090ad1b29",
+  "chunks": [
+    {"file":"p00.txt","bytes":5536,"sha256":"42b790182f5a97ea734edeaad8028a12eb3563554f95c75145c307633d43354b"},
+    {"file":"p01.txt","bytes":5536,"sha256":"762e317e0e555a12794a8027c5e70d8fb2c06a35cf5eed91a3440bc3e5fb4ece"},
+    {"file":"p02.txt","bytes":5536,"sha256":"7a2a79ba72e5bbe9d52f4f04542fea0c77d1535e352103a7359ec02c547179e8"},
+    {"file":"p03.txt","bytes":5535,"sha256":"ef726fef0f5c41c9a037bf51ebece6e34ef7f9afa5bdd3e4420aca32ae431be6"},
+    {"file":"p04.txt","bytes":5535,"sha256":"e2c90e6429f8c7bf8481c4b3d2f844633bdd1a0fd01c251fb24151454e5ee113"},
+    {"file":"p05.txt","bytes":5535,"sha256":"b41a93fc0986c51e0ae26b0165c816f0a05b8e53409c43e63b6bfd67ef0bee1f"},
+    {"file":"p06.txt","bytes":5535,"sha256":"c142ab180b607b0b36cbe8f9ae7e5eb3cadb16b0c18988ccd87858884b75fe40"}
+  ]
+}
