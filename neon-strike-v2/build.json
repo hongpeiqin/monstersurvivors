@@ -6,9 +6,14 @@
   "base64_bytes": 38748,
   "source_sha256": "e721c8e1a35aeea14c275452788330cb0640a3b75355d9f2a7ef32bda3e8f04b",
   "gzip_sha256": "f9b555242da98e19ca814bb004f080706e038c568a6a6b389ddf27c090ad1b29",
+  "normalization": {
+    "file": "p00.txt",
+    "find": "LZroApzIoOw/MiBJzef",
+    "replace": "LproApzIoOw/MiCBDWf"
+  },
   "chunks": [
-    {"file":"p00.txt","bytes":5536,"sha256":"42b790182f5a97ea734edeaad8028a12eb3563554f95c75145c307633d43354b"},
-    {"file":"p01.txt","bytes":5536,"sha256":"762e317e0e555a12794a8027c5e70d8fb2c06a35cf5eed91a3440bc3e5fb4ece"},
+    {"file":"p00.txt","bytes":5583,"sha256":"f974922e1fc8e5f8c76d27b549bed917c994717fac5f56433ba67f7708686165"},
+    {"file":"p01.txt","bytes":5583,"sha256":"9c9ea51c3eae4c7cd236ff29bb83fc25d52b24805a803a5d08c5af825f98d237"},
     {"file":"p02.txt","bytes":5536,"sha256":"7a2a79ba72e5bbe9d52f4f04542fea0c77d1535e352103a7359ec02c547179e8"},
     {"file":"p03.txt","bytes":5535,"sha256":"ef726fef0f5c41c9a037bf51ebece6e34ef7f9afa5bdd3e4420aca32ae431be6"},
     {"file":"p04.txt","bytes":5535,"sha256":"e2c90e6429f8c7bf8481c4b3d2f844633bdd1a0fd01c251fb24151454e5ee113"},
