@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07121a">
-  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持 J/K/L/U 右手战斗键位、严格怪物数量上限、三档粒子特效、整帧耗时预算保护、受击后撤与程序化音频。">
-  <title>霜刃战场 · 2.5D 战士 Demo v2.1.8</title>
-  <link rel="stylesheet" href="./style.css?v=2.1.8">
-  <link rel="stylesheet" href="./fx-level-2.1.4.css?v=2.1.8">
+  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持界面抖动与设备震动开关、J/K/L/U 战斗键位、严格怪物数量上限、三档粒子特效与整帧耗时预算保护。">
+  <title>霜刃战场 · 2.5D 战士 Demo v2.1.9</title>
+  <link rel="stylesheet" href="./style.css?v=2.1.9">
+  <link rel="stylesheet" href="./fx-level-2.1.4.css?v=2.1.9">
   <script type="importmap">
   {
     "imports": {
-      "./js/entities.js": "./js/entities-2.1.2.js?v=2.1.8",
-      "./js/effects.js": "./js/effects-2.1.5.js?v=2.1.8"
+      "./js/entities.js": "./js/entities-2.1.2.js?v=2.1.9",
+      "./js/effects.js": "./js/effects-2.1.5.js?v=2.1.9"
     }
   }
   </script>
@@ -37,7 +37,7 @@
   </div>
   <div id="settingsBackdrop" hidden>
     <section id="settingsPanel" class="glass" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <header><div><strong id="settingsTitle">战场设置</strong><span>特效档位和怪物数量都交给你，硬件终于不用被算法擅自代表。</span></div><button id="closeSettings" type="button" aria-label="关闭设置">×</button></header>
+      <header><div><strong id="settingsTitle">战场设置</strong><span>特效、怪物和反馈都能单独控制，终于不用让一台设备承担所有戏剧效果。</span></div><button id="closeSettings" type="button" aria-label="关闭设置">×</button></header>
       <label class="setting-row range-row"><span><b>背景音乐</b><small>程序化循环配乐</small></span><output id="bgmValue">45%</output><input id="bgmVolume" type="range" min="0" max="1" step="0.01" value="0.45"></label>
       <label class="setting-row range-row"><span><b>攻击音效</b><small>挥刀、命中、技能与受伤</small></span><output id="sfxValue">70%</output><input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.70"></label>
       <div class="setting-row effect-level-row">
@@ -50,14 +50,16 @@
         <input id="particlesToggle" type="checkbox" checked tabindex="-1" aria-hidden="true">
       </div>
       <label class="setting-row range-row monster-count-row"><span><b>怪物数量</b><small>严格限制场上存活怪物数量。设为 10 就只允许 10 只；设为 0 会暂停刷怪并清空场上怪物。</small></span><output id="monsterCountValue">20 / 80</output><input id="monsterCount" type="range" min="0" max="80" step="1" value="20"><span class="monster-count-hint"><i>0</i><i>40</i><i>80</i></span></label>
+      <label class="setting-row switch-row" for="screenShakeToggle"><span><b>界面抖动</b><small>控制命中、重击和受伤时的画面位移。关闭后不影响刀光与粒子，可减少视觉晃动和少量合成开销。</small></span><input id="screenShakeToggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
+      <label class="setting-row switch-row" for="vibrationToggle"><span><b>设备震动</b><small>支持 Vibration API 的手机会在命中和受伤时提供触觉反馈；Mac、iPhone Safari 和不支持的浏览器会自动忽略。</small></span><input id="vibrationToggle" type="checkbox" checked><i class="switch" aria-hidden="true"></i></label>
       <label class="setting-row switch-row" for="muteToggle"><span><b>全部静音</b><small>也可按 M 快速切换</small></span><input id="muteToggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
-      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物生成现在由独立上限管理器约束，不再依赖每秒清场重建；AI、群体避让和粒子物理继续按帧轮转。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转 · 怪物 0/20</small></div>
+      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物生成由独立上限管理器约束；AI、群体避让和粒子物理继续按帧轮转。界面抖动与设备震动可以独立关闭。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转 · 怪物 0/20</small></div>
       <footer>键盘：J 普攻，K 裂空斩，L 旋风斩，U 突进；Q/E/R 继续兼容，I/O 预留后续技能。</footer>
     </section>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="./js/settings-bootstrap-2.1.4.js?v=2.1.8"></script>
-  <script src="./js/keymap-bootstrap-2.1.6.js?v=2.1.8"></script>
-  <script type="module" src="./js/main-2.1.8.js?v=2.1.8"></script>
+  <script src="./js/settings-bootstrap-2.1.9.js?v=2.1.9"></script>
+  <script src="./js/keymap-bootstrap-2.1.6.js?v=2.1.9"></script>
+  <script type="module" src="./js/main-2.1.9.js?v=2.1.9"></script>
 </body>
 </html>
