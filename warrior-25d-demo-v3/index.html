@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07121a">
-  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持三档粒子特效、整帧耗时预算保护、0 至 80 怪物数量控制、受击后撤、自适应分帧与程序化音频。">
-  <title>霜刃战场 · 2.5D 战士 Demo v2.1.5-r2</title>
-  <link rel="stylesheet" href="../warrior-25d-demo-v2/style.css?v=2.1.5-r2">
-  <link rel="stylesheet" href="../warrior-25d-demo-v2/fx-level-2.1.4.css?v=2.1.5-r2">
+  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持 J/K/L/U 右手战斗键位、三档粒子特效、整帧耗时预算保护、0 至 80 怪物数量控制、受击后撤与程序化音频。">
+  <title>霜刃战场 · 2.5D 战士 Demo v2.1.6</title>
+  <link rel="stylesheet" href="../warrior-25d-demo-v2/style.css?v=2.1.6">
+  <link rel="stylesheet" href="../warrior-25d-demo-v2/fx-level-2.1.4.css?v=2.1.6">
   <script type="importmap">
   {
     "imports": {
-      "../warrior-25d-demo-v2/js/entities.js": "../warrior-25d-demo-v2/js/entities-2.1.2.js?v=2.1.5",
-      "../warrior-25d-demo-v2/js/effects.js": "../warrior-25d-demo-v2/js/effects-2.1.5.js?v=2.1.5-r2"
+      "../warrior-25d-demo-v2/js/entities.js": "../warrior-25d-demo-v2/js/entities-2.1.2.js?v=2.1.6",
+      "../warrior-25d-demo-v2/js/effects.js": "../warrior-25d-demo-v2/js/effects-2.1.5.js?v=2.1.6"
     }
   }
   </script>
@@ -30,9 +30,9 @@
     <div class="joystick-ring"><div id="joystickKnob"></div></div><span>移动</span>
   </div>
   <div id="actions" class="control-zone" aria-label="技能按钮">
-    <button class="skill secondary" data-action="slash" type="button"><span class="skill-icon">刃</span><b>裂空斩</b><small>Q</small><i class="cooldown"></i></button>
-    <button class="skill secondary" data-action="spin" type="button"><span class="skill-icon">旋</span><b>旋风斩</b><small>E</small><i class="cooldown"></i></button>
-    <button class="skill secondary" data-action="dash" type="button"><span class="skill-icon">突</span><b>突进</b><small>R</small><i class="cooldown"></i></button>
+    <button class="skill secondary" data-action="slash" type="button"><span class="skill-icon">刃</span><b>裂空斩</b><small>K</small><i class="cooldown"></i></button>
+    <button class="skill secondary" data-action="spin" type="button"><span class="skill-icon">旋</span><b>旋风斩</b><small>L</small><i class="cooldown"></i></button>
+    <button class="skill secondary" data-action="dash" type="button"><span class="skill-icon">突</span><b>突进</b><small>U</small><i class="cooldown"></i></button>
     <button class="skill primary" data-action="attack" type="button"><span class="skill-icon">斩</span><b>普通攻击</b><small>J / 空格</small><i class="cooldown"></i></button>
   </div>
   <div id="settingsBackdrop" hidden>
@@ -51,12 +51,13 @@
       </div>
       <label class="setting-row range-row monster-count-row"><span><b>怪物数量</b><small>控制场上存活怪物目标数量。设为 0 会暂停刷怪并清空场上怪物。</small></span><output id="monsterCountValue">20 / 80</output><input id="monsterCount" type="range" min="0" max="80" step="1" value="20"><span class="monster-count-hint"><i>0</i><i>40</i><i>80</i></span></label>
       <label class="setting-row switch-row" for="muteToggle"><span><b>全部静音</b><small>也可按 M 快速切换</small></span><input id="muteToggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
-      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理按帧轮转；高级特效改用缓存光斑、批量刀光线段和对象池，绘制预算会在约 4 帧内根据整帧压力调整。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
-      <footer>桌面：WASD / 方向键移动，J 或空格攻击，Q/E/R 技能，V 显示调度信息。</footer>
+      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理按帧轮转；高级特效使用缓存光斑、批量刀光线段和对象池，绘制预算会按整帧压力调整。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
+      <footer>键盘：J 普攻，K 裂空斩，L 旋风斩，U 突进；Q/E/R 继续兼容，I/O 预留后续技能。</footer>
     </section>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="../warrior-25d-demo-v2/js/settings-bootstrap-2.1.4.js?v=2.1.5-r2"></script>
-  <script type="module" src="../warrior-25d-demo-v2/js/main-2.1.5.js?v=2.1.5-r2"></script>
+  <script src="../warrior-25d-demo-v2/js/settings-bootstrap-2.1.4.js?v=2.1.6"></script>
+  <script src="../warrior-25d-demo-v2/js/keymap-bootstrap-2.1.6.js?v=2.1.6"></script>
+  <script type="module" src="../warrior-25d-demo-v2/js/main-2.1.5.js?v=2.1.6"></script>
 </body>
 </html>
