@@ -1,0 +1,11 @@
+{
+  "name": "霜刃幸存者：七夜远征",
+  "build": "1.0.1-pages",
+  "sourceSha256": "5c4fa54d0d5d6765147b492ab0dbd1ec0f2c7e2306bf407bf0e7f3c55b3dcc2d",
+  "encoding": "gzip-base64-utf8",
+  "chunks": [
+    "payload/p00.txt",
+    "payload/p01.txt",
+    "payload/p02.txt"
+  ]
+}
