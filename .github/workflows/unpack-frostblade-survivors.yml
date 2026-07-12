@@ -34,7 +34,7 @@ jobs:
             echo "Source payload is incomplete: ${#parts[@]}/7 parts."
             exit 0
           fi
-          cat "${parts[@]}" | base64 --decode > /tmp/frostblade-survivors.tar.gz
+          cat "${parts[@]}" > /tmp/frostblade-survivors.tar.gz
           tar -tzf /tmp/frostblade-survivors.tar.gz >/dev/null
           rm -rf frostblade-survivors
           tar -xzf /tmp/frostblade-survivors.tar.gz
