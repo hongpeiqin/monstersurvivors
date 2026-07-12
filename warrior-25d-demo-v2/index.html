@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07121a">
-  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持 J/K/L/U 右手战斗键位、稳定怪物数量控制、三档粒子特效、整帧耗时预算保护、受击后撤与程序化音频。">
-  <title>霜刃战场 · 2.5D 战士 Demo v2.1.7</title>
-  <link rel="stylesheet" href="./style.css?v=2.1.7">
-  <link rel="stylesheet" href="./fx-level-2.1.4.css?v=2.1.7">
+  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持 J/K/L/U 右手战斗键位、严格怪物数量上限、三档粒子特效、整帧耗时预算保护、受击后撤与程序化音频。">
+  <title>霜刃战场 · 2.5D 战士 Demo v2.1.8</title>
+  <link rel="stylesheet" href="./style.css?v=2.1.8">
+  <link rel="stylesheet" href="./fx-level-2.1.4.css?v=2.1.8">
   <script type="importmap">
   {
     "imports": {
-      "./js/entities.js": "./js/entities-2.1.2.js?v=2.1.7",
-      "./js/effects.js": "./js/effects-2.1.5.js?v=2.1.7"
+      "./js/entities.js": "./js/entities-2.1.2.js?v=2.1.8",
+      "./js/effects.js": "./js/effects-2.1.5.js?v=2.1.8"
     }
   }
   </script>
@@ -24,7 +24,7 @@
     <div class="hp-track"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
     <div class="hud-row stats"><span>击破 <b id="killsText">0</b></span><span id="perfText">性能：轻载</span></div>
   </section>
-  <div id="title"><strong>霜刃战场</strong><span>八方向 · 怪物数量可调 · 自适应调度</span></div>
+  <div id="title"><strong>霜刃战场</strong><span>八方向 · 怪物数量严格受控 · 自适应调度</span></div>
   <button id="settingsButton" class="icon-button glass" type="button" aria-label="打开设置">⚙</button>
   <div id="joystick" class="control-zone" aria-label="八方向移动摇杆">
     <div class="joystick-ring"><div id="joystickKnob"></div></div><span>移动</span>
@@ -49,15 +49,15 @@
         </div>
         <input id="particlesToggle" type="checkbox" checked tabindex="-1" aria-hidden="true">
       </div>
-      <label class="setting-row range-row monster-count-row"><span><b>怪物数量</b><small>控制场上存活怪物目标数量。设为 0 会暂停刷怪并清空场上怪物。</small></span><output id="monsterCountValue">20 / 80</output><input id="monsterCount" type="range" min="0" max="80" step="1" value="20"><span class="monster-count-hint"><i>0</i><i>40</i><i>80</i></span></label>
+      <label class="setting-row range-row monster-count-row"><span><b>怪物数量</b><small>严格限制场上存活怪物数量。设为 10 就只允许 10 只；设为 0 会暂停刷怪并清空场上怪物。</small></span><output id="monsterCountValue">20 / 80</output><input id="monsterCount" type="range" min="0" max="80" step="1" value="20"><span class="monster-count-hint"><i>0</i><i>40</i><i>80</i></span></label>
       <label class="setting-row switch-row" for="muteToggle"><span><b>全部静音</b><small>也可按 M 快速切换</small></span><input id="muteToggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
-      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理按帧轮转；高级特效使用缓存光斑、批量刀光线段和对象池，绘制预算会按整帧压力调整。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
+      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物生成现在由独立上限管理器约束，不再依赖每秒清场重建；AI、群体避让和粒子物理继续按帧轮转。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转 · 怪物 0/20</small></div>
       <footer>键盘：J 普攻，K 裂空斩，L 旋风斩，U 突进；Q/E/R 继续兼容，I/O 预留后续技能。</footer>
     </section>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="./js/settings-bootstrap-2.1.4.js?v=2.1.7"></script>
-  <script src="./js/keymap-bootstrap-2.1.6.js?v=2.1.7"></script>
-  <script type="module" src="./js/main-2.1.7.js?v=2.1.7"></script>
+  <script src="./js/settings-bootstrap-2.1.4.js?v=2.1.8"></script>
+  <script src="./js/keymap-bootstrap-2.1.6.js?v=2.1.8"></script>
+  <script type="module" src="./js/main-2.1.8.js?v=2.1.8"></script>
 </body>
 </html>
