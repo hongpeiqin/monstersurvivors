@@ -1,5 +1,5 @@
 import './gameplay-bootstrap-2.1.4.js';
-await import('./main-2.1.1.js?v=2.1.4');
+import './main-2.1.1.js?v=2.1.4';
 
 const STORAGE_KEY = 'warrior25d.settings.v2';
 const VALID_LEVELS = new Set(['off', 'medium', 'high']);
