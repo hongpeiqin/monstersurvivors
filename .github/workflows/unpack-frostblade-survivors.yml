@@ -1,0 +1,65 @@
+name: Unpack Frostblade Survivors source
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/assets/frostblade/**"
+      - ".github/workflows/unpack-frostblade-survivors.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: frostblade-survivors-source
+  cancel-in-progress: true
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and validate source
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          parts=(.github/assets/frostblade/part-*)
+          if [ "${#parts[@]}" -lt 7 ]; then
+            echo "Source payload is incomplete: ${#parts[@]}/7 parts."
+            exit 0
+          fi
+          cat "${parts[@]}" | base64 --decode > /tmp/frostblade-survivors.tar.gz
+          tar -tzf /tmp/frostblade-survivors.tar.gz >/dev/null
+          rm -rf frostblade-survivors
+          tar -xzf /tmp/frostblade-survivors.tar.gz
+          test -f frostblade-survivors/index.html
+          test -f frostblade-survivors/js/main.js
+          for file in frostblade-survivors/js/*.js; do
+            node --input-type=module --check < "$file"
+          done
+          node --check frostblade-survivors/service-worker.js
+
+      - name: Commit extracted project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f frostblade-survivors/index.html ]; then
+            echo "No complete source payload yet."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frostblade-survivors
+          if git diff --cached --quiet; then
+            echo "Project source is already current."
+            exit 0
+          fi
+          git commit -m "feat: add Frostblade Survivors seven-night game"
+          git pull --rebase origin main
+          git push origin HEAD:main
