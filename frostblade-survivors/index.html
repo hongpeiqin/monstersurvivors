@@ -29,7 +29,7 @@
   let pausedByOrientation=false;
   let scheduled=0;
   const game=()=>globalThis.__FROSTBLADE_GAME__?.game;
-  const mobileLike=()=>matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||(Math.min(innerWidth,innerHeight)<=820&&Math.max(innerWidth,innerHeight)<=1400);
+  const mobileLike=()=>matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||navigator.userAgentData?.mobile===true||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   const blocked=()=>mobileLike()&&innerHeight>innerWidth;
   function update(){
     scheduled=0;
