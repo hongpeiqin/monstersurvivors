@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07121a">
-  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持关、中等、高级三档粒子特效、0 至 80 怪物数量控制、受击后撤、自适应分帧调度、技能与程序化音频。">
-  <title>霜刃战场 · 2.5D 战士 Demo v2.1.4</title>
-  <link rel="stylesheet" href="../warrior-25d-demo-v2/style.css?v=2.1.4">
-  <link rel="stylesheet" href="../warrior-25d-demo-v2/fx-level-2.1.4.css?v=2.1.4">
+  <meta name="description" content="2.5D 八方向战士战斗 Demo，支持三档粒子特效、实时绘制预算保护、0 至 80 怪物数量控制、受击后撤、自适应分帧与程序化音频。">
+  <title>霜刃战场 · 2.5D 战士 Demo v2.1.5</title>
+  <link rel="stylesheet" href="../warrior-25d-demo-v2/style.css?v=2.1.5">
+  <link rel="stylesheet" href="../warrior-25d-demo-v2/fx-level-2.1.4.css?v=2.1.5">
   <script type="importmap">
   {
     "imports": {
-      "../warrior-25d-demo-v2/js/entities.js": "../warrior-25d-demo-v2/js/entities-2.1.2.js?v=2.1.4",
-      "../warrior-25d-demo-v2/js/effects.js": "../warrior-25d-demo-v2/js/effects-2.1.4.js?v=2.1.4"
+      "../warrior-25d-demo-v2/js/entities.js": "../warrior-25d-demo-v2/js/entities-2.1.2.js?v=2.1.5",
+      "../warrior-25d-demo-v2/js/effects.js": "../warrior-25d-demo-v2/js/effects-2.1.5.js?v=2.1.5"
     }
   }
   </script>
@@ -41,7 +41,7 @@
       <label class="setting-row range-row"><span><b>背景音乐</b><small>程序化循环配乐</small></span><output id="bgmValue">45%</output><input id="bgmVolume" type="range" min="0" max="1" step="0.01" value="0.45"></label>
       <label class="setting-row range-row"><span><b>攻击音效</b><small>挥刀、命中、技能与受伤</small></span><output id="sfxValue">70%</output><input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.70"></label>
       <div class="setting-row effect-level-row">
-        <span><b>粒子特效</b><small>中等为默认档；高级恢复截图中的多层刀光、密集环身粒子、旋转光环和命中爆发；关闭会立即清空粒子。</small></span>
+        <span><b>粒子特效</b><small>中等为默认档；高级保留多层刀光、环身粒子、旋转光环和命中爆发，同时根据实际绘制耗时自动收缩预算；关闭会立即清空粒子。</small></span>
         <div class="fx-level-control" role="radiogroup" aria-label="粒子特效质量">
           <label><input type="radio" name="particleLevel" value="off"><span>关</span></label>
           <label><input type="radio" name="particleLevel" value="medium" checked><span>中等</span></label>
@@ -51,12 +51,12 @@
       </div>
       <label class="setting-row range-row monster-count-row"><span><b>怪物数量</b><small>控制场上存活怪物目标数量。设为 0 会暂停刷怪并清空场上怪物。</small></span><output id="monsterCountValue">20 / 80</output><input id="monsterCount" type="range" min="0" max="80" step="1" value="20"><span class="monster-count-hint"><i>0</i><i>40</i><i>80</i></span></label>
       <label class="setting-row switch-row" for="muteToggle"><span><b>全部静音</b><small>也可按 M 快速切换</small></span><input id="muteToggle" type="checkbox"><i class="switch" aria-hidden="true"></i></label>
-      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理会按帧轮转。高级档恢复最初那版多层刀光、密集命中爆发和旋转环身光环，同时仍保留分帧更新。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
+      <div class="scheduler-card"><div><b>自适应分帧</b><span id="schedulerMode">轻载模式</span></div><p>怪物 AI、群体避让和粒子物理按帧轮转；高级特效改用缓存光斑、批量刀光线段和对象池，绘制预算会在约 6 帧内根据耗时调整。</p><div class="meter"><i id="frameMeter"></i></div><small id="schedulerDetail">AI 3 帧轮转 · 粒子 2 帧轮转</small></div>
       <footer>桌面：WASD / 方向键移动，J 或空格攻击，Q/E/R 技能，V 显示调度信息。</footer>
     </section>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="../warrior-25d-demo-v2/js/settings-bootstrap-2.1.4.js?v=2.1.4"></script>
-  <script type="module" src="../warrior-25d-demo-v2/js/main-2.1.4.js?v=2.1.4"></script>
+  <script src="../warrior-25d-demo-v2/js/settings-bootstrap-2.1.4.js?v=2.1.5"></script>
+  <script type="module" src="../warrior-25d-demo-v2/js/main-2.1.5.js?v=2.1.5"></script>
 </body>
 </html>
