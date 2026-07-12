@@ -8,7 +8,7 @@
   <title>霜刃幸存者：七夜远征 · 正在载入</title>
   <style>
     html,body{width:100%;height:100%;margin:0;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
-    body{display:grid;place-items:center}.boot{text-align:center;padding:24px}.sigil{width:68px;height:68px;margin:0 auto 18px;border-radius:50%;border:2px solid rgba(115,230,255,.2);border-top-color:#7ff2c2;border-right-color:#73e6ff;box-shadow:0 0 28px rgba(115,230,255,.24);animation:spin .75s linear infinite}.boot strong{display:block;font-size:19px;letter-spacing:.12em}.boot p{margin:10px 0 0;color:#9eb8c4;font-size:12px}.boot a{display:inline-block;margin-top:16px;color:#7ff2c2}@keyframes spin{to{transform:rotate(360deg)}}
+    body{display:grid;place-items:center}.boot{text-align:center;padding:24px}.sigil{width:68px;height:68px;margin:0 auto 18px;border-radius:50%;border:2px solid rgba(115,230,255,.2);border-top-color:#7ff2c2;border-right-color:#73e6ff;box-shadow:0 0 28px rgba(115,230,255,.24);animation:spin .75s linear infinite}.boot strong{display:block;font-size:19px;letter-spacing:.12em}.boot p{margin:10px 0 0;color:#9eb8c4;font-size:12px;line-height:1.55}.boot a{display:inline-block;margin-top:16px;color:#7ff2c2}@keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -16,7 +16,8 @@
   <script>
   (async()=>{
     const state=document.getElementById('state');
-    const build='1.0.1-pages-20260712';
+    const build='1.0.2-pages-20260712';
+    const hex=buffer=>[...new Uint8Array(buffer)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
     try{
       if(typeof DecompressionStream==='undefined')throw new Error('当前浏览器不支持流式解压，请升级浏览器');
       const manifestResponse=await fetch(`manifest.json?v=${build}`,{cache:'no-store'});
@@ -24,15 +25,20 @@
       const manifest=await manifestResponse.json();
       const parts=[];
       for(let index=0;index<manifest.chunks.length;index++){
+        const file=manifest.chunks[index];
         state.textContent=`读取战场模块 ${index+1}/${manifest.chunks.length}`;
-        const response=await fetch(`${manifest.chunks[index]}?v=${build}`,{cache:'no-store'});
-        if(!response.ok)throw new Error(`${manifest.chunks[index]} HTTP ${response.status}`);
+        const response=await fetch(`${file}?v=${build}`,{cache:'no-store'});
+        if(!response.ok)throw new Error(`${file} HTTP ${response.status}`);
         parts.push((await response.text()).trim());
       }
-      state.textContent='构筑霜原与远征营地…';
+      state.textContent='校验并构筑霜原…';
       const binary=atob(parts.join(''));
       const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
       const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      if(globalThis.crypto?.subtle&&manifest.sourceSha256){
+        const digest=hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(html)));
+        if(digest!==manifest.sourceSha256)throw new Error('游戏资源校验失败，请刷新后重试');
+      }
       document.open();document.write(html);document.close();
     }catch(error){
       console.error(error);
