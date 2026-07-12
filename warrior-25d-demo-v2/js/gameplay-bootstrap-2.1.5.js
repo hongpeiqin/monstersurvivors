@@ -3,6 +3,25 @@ import { Enemy } from './entities-2.1.2.js?v=2.1.5';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const targetCount = () => clamp(Math.round(Number(globalThis.__WARRIOR_MONSTER_TARGET__) || 0), 0, Number(globalThis.__WARRIOR_MONSTER_LIMIT__) || 80);
 
+// Track total frame time as well as particle draw time. The original scheduler waits 120 frames
+// before changing mode, which is far too patient when one frame already takes hundreds of ms.
+const nativeRequestAnimationFrame = globalThis.requestAnimationFrame?.bind(globalThis);
+if (nativeRequestAnimationFrame) {
+  let lastFrameTime = 0;
+  let frameEma = 16.7;
+  globalThis.requestAnimationFrame = callback => nativeRequestAnimationFrame(time => {
+    if (time !== lastFrameTime) {
+      if (lastFrameTime) {
+        const elapsed = clamp(time - lastFrameTime, 1, 100);
+        frameEma = frameEma * 0.84 + elapsed * 0.16;
+      }
+      lastFrameTime = time;
+      globalThis.__WARRIOR_FRAME_MS__ = frameEma;
+    }
+    callback(time);
+  });
+}
+
 // Capture only the game's enemy array, then immediately restore Array.prototype.push.
 // The previous build left a global push wrapper installed for every particle, visual and render-list insertion.
 const nativePush = Array.prototype.push;
