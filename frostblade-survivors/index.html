@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07141c">
+  <meta name="description" content="霜刃幸存者：七夜远征，一款 2.5D 割草生存游戏。">
+  <title>霜刃幸存者：七夜远征 · 正在载入</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+    body{display:grid;place-items:center}.boot{text-align:center;padding:24px}.sigil{width:68px;height:68px;margin:0 auto 18px;border-radius:50%;border:2px solid rgba(115,230,255,.2);border-top-color:#7ff2c2;border-right-color:#73e6ff;box-shadow:0 0 28px rgba(115,230,255,.24);animation:spin .75s linear infinite}.boot strong{display:block;font-size:19px;letter-spacing:.12em}.boot p{margin:10px 0 0;color:#9eb8c4;font-size:12px}.boot a{display:inline-block;margin-top:16px;color:#7ff2c2}@keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <main class="boot"><div class="sigil"></div><strong>正在开启七夜远征</strong><p id="state">读取战场模块…</p></main>
+  <script>
+  (async()=>{
+    const state=document.getElementById('state');
+    const build='1.0.1-pages-20260712';
+    try{
+      if(typeof DecompressionStream==='undefined')throw new Error('当前浏览器不支持流式解压，请升级浏览器');
+      const manifestResponse=await fetch(`manifest.json?v=${build}`,{cache:'no-store'});
+      if(!manifestResponse.ok)throw new Error(`manifest HTTP ${manifestResponse.status}`);
+      const manifest=await manifestResponse.json();
+      const parts=[];
+      for(let index=0;index<manifest.chunks.length;index++){
+        state.textContent=`读取战场模块 ${index+1}/${manifest.chunks.length}`;
+        const response=await fetch(`${manifest.chunks[index]}?v=${build}`,{cache:'no-store'});
+        if(!response.ok)throw new Error(`${manifest.chunks[index]} HTTP ${response.status}`);
+        parts.push((await response.text()).trim());
+      }
+      state.textContent='构筑霜原与远征营地…';
+      const binary=atob(parts.join(''));
+      const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+      const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      document.open();document.write(html);document.close();
+    }catch(error){
+      console.error(error);
+      document.body.innerHTML=`<main class="boot"><strong>载入失败</strong><p>${String(error.message||error)}</p><a href="./?retry=${Date.now()}">重新载入</a></main>`;
+    }
+  })();
+  </script>
+</body>
+</html>
