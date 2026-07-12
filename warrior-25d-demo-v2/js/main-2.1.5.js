@@ -1,5 +1,6 @@
-import './gameplay-bootstrap-2.1.5.js';
-import './main-2.1.1.js?v=2.1.5';
+import './gameplay-bootstrap-2.1.5.js?v=2.1.5-r2';
+import './effects-frame-adapter-2.1.5.js?v=2.1.5-r2';
+import './main-2.1.1.js?v=2.1.5-r2';
 
 const STORAGE_KEY = 'warrior25d.settings.v2';
 const VALID_LEVELS = new Set(['off', 'medium', 'high']);
