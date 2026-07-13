@@ -1,0 +1,84 @@
+name: Materialize Frostblade v1.3.1 Pages build
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/materialize-frostblade-v131-final.yml"
+      - ".frostblade-v131-final-trigger"
+      - "frostblade-survivors/index-v131-final.html"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: frostblade-v131-final
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore payload and validate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p frostblade-survivors/payload-v131
+
+          shas=(
+            66de1081e1443b39f571c314ce8149c548b858e7
+            285f4c4005447b9f27bce2b70121bd94827509c1
+            f7c48bef43f0744387a9d8af74d1b7c809cd8a44
+            e0f4897bf3631c30f16bbae627f68778faa46660
+            f6c1ec70e1af030790d16ca0f1ec5b86bccef6a1
+            c4aee7823c980f47d75bc8ac6c80573c0afb6510
+            a60b0f1403dc517f94169bc4c4260e802d3904c1
+            330682512be8943469da45586e4ced062780dd46
+            4c9571d2d23dafcafbcbd7dc1ceb1db5978b692a
+          )
+
+          test -s frostblade-survivors/payload-v131/s00.txt
+          test -s frostblade-survivors/payload-v131/s01.txt
+
+          for index in "${!shas[@]}"; do
+            number=$(printf '%02d' $((index + 2)))
+            gh api "/repos/${GITHUB_REPOSITORY}/git/blobs/${shas[$index]}" --jq '.content' \
+              | tr -d '\n' \
+              | base64 --decode \
+              > "frostblade-survivors/payload-v131/s${number}.txt"
+            test -s "frostblade-survivors/payload-v131/s${number}.txt"
+          done
+
+          cat frostblade-survivors/payload-v131/s{00..10}.txt \
+            | tr -d '\r\n' \
+            | base64 --decode \
+            > /tmp/frostblade-v131.html.gz
+          gzip -t /tmp/frostblade-v131.html.gz
+          gzip -dc /tmp/frostblade-v131.html.gz > /tmp/frostblade-v131.html
+          grep -q '__FROSTBLADE_GAME__' /tmp/frostblade-v131.html
+          grep -q '1.3.1' /tmp/frostblade-v131.html
+
+          cp frostblade-survivors/index-v131-final.html frostblade-survivors/index.html
+
+      - name: Commit final Pages files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frostblade-survivors/index.html frostblade-survivors/payload-v131
+          if git diff --cached --quiet; then
+            echo "Frostblade v1.3.1 Pages files are already current."
+            exit 0
+          fi
+          git commit -m "deploy: publish Frostblade v1.3.1 Pages build"
+          git pull --rebase origin main
+          git push origin HEAD:main
