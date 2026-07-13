@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07141c">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="description" content="霜刃幸存者：七夜远征 v1.3.1，多语言移动端优化版。">
+  <title>霜刃幸存者 · 正在载入 v1.3.1</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    body{display:grid;place-items:center}.boot{text-align:center;padding:24px}.sigil{width:62px;height:62px;margin:0 auto 17px;border-radius:50%;border:2px solid rgba(115,230,255,.2);border-top-color:#7ff2c2;border-right-color:#73e6ff;box-shadow:0 0 28px rgba(115,230,255,.22);animation:spin .75s linear infinite}.boot strong{display:block;font-size:18px;letter-spacing:.1em}.boot p{margin:9px 0 0;color:#9eb8c4;font-size:11px;line-height:1.55}.boot a{display:inline-block;margin-top:15px;color:#7ff2c2}@keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <main class="boot"><div class="sigil"></div><strong>正在开启七夜远征</strong><p id="state">读取战场模块…</p></main>
+  <script>
+  (async()=>{
+    const state=document.getElementById('state');
+    const build='1.3.1-pages-final-20260713';
+    try{
+      if(typeof DecompressionStream==='undefined')throw new Error('当前浏览器不支持流式解压，请升级浏览器');
+      const files=Array.from({length:11},(_,i)=>`payload-v131/s${String(i).padStart(2,'0')}.txt`);
+      const parts=[];
+      for(let i=0;i<files.length;i++){
+        state.textContent=`读取战场模块 ${i+1}/${files.length}`;
+        const response=await fetch(`${files[i]}?v=${build}`,{cache:'no-store'});
+        if(!response.ok)throw new Error(`${files[i]} HTTP ${response.status}`);
+        parts.push((await response.text()).trim());
+      }
+      state.textContent='构筑霜原与远征营地…';
+      const binary=atob(parts.join(''));
+      const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+      const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      if(!html.includes('__FROSTBLADE_GAME__')||!html.includes('1.3.1'))throw new Error('游戏资源版本校验失败');
+      document.open();document.write(html);document.close();
+    }catch(error){
+      console.error(error);
+      document.body.innerHTML=`<main class="boot"><strong>载入失败</strong><p>${String(error.message||error)}</p><a href="./?retry=${Date.now()}">重新载入</a></main>`;
+    }
+  })();
+  </script>
+</body>
+</html>
