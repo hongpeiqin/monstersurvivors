@@ -1,0 +1,83 @@
+name: Publish Frostblade direct static page
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/assets/frostblade-direct-v131/**"
+      - ".github/workflows/materialize-frostblade-direct.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: frostblade-direct-static
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rebuild and verify direct HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/assets/frostblade-direct-v131/part-*.txt \
+            | tr -d '\r\n\t ' \
+            | base64 --decode > /tmp/frostblade-index.xz
+          xz --decompress --stdout /tmp/frostblade-index.xz > /tmp/frostblade-index.html
+          echo "5b0a067587e75dd7b588495b49ccd29961136a4bc72625e410a42867b42b0985  /tmp/frostblade-index.html" | sha256sum --check --strict
+          grep -q '__FROSTBLADE_GAME__' /tmp/frostblade-index.html
+          grep -q '1.3.1' /tmp/frostblade-index.html
+          ! grep -q 'DecompressionStream' /tmp/frostblade-index.html
+          ! grep -q 'payload-v131' /tmp/frostblade-index.html
+          ! grep -q 'api.github.com/repos/hongpeiqin/monstersurvivors/git/blobs' /tmp/frostblade-index.html
+
+      - name: Replace broken loaders with direct static page
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf frostblade-survivors
+          mkdir -p frostblade-survivors/v131 frostblade-survivors/v131-fixed
+          cp /tmp/frostblade-index.html frostblade-survivors/index.html
+          touch frostblade-survivors/.nojekyll
+
+          cat > frostblade-survivors/v131/index.html <<'HTML'
+          <!doctype html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+            <meta http-equiv="refresh" content="0;url=../?v=1.3.1-direct-20260713">
+            <title>霜刃幸存者 v1.3.1</title>
+          </head>
+          <body>
+            <a href="../?v=1.3.1-direct-20260713">进入游戏</a>
+            <script>location.replace('../?v=1.3.1-direct-20260713');</script>
+          </body>
+          </html>
+          HTML
+
+          cp frostblade-survivors/v131/index.html frostblade-survivors/v131-fixed/index.html
+
+      - name: Commit direct static deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A frostblade-survivors
+          if git diff --cached --quiet; then
+            echo "Direct Frostblade page is already current."
+            exit 0
+          fi
+          git commit -m "fix: publish direct Frostblade v1.3.1 static page"
+          git pull --rebase origin main
+          git push origin HEAD:main
