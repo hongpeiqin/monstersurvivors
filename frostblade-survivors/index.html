@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07141c">
-  <meta name="description" content="霜刃幸存者：七夜远征，一款支持移动端横屏引导的 2.5D 割草生存游戏。">
+  <meta name="description" content="霜刃幸存者：七夜远征，一款支持移动端横屏与大触控摇杆的 2.5D 割草生存游戏。">
   <title>霜刃幸存者：七夜远征 · 正在载入</title>
   <style>
     html,body{width:100%;height:100%;margin:0;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
@@ -16,34 +16,94 @@
   <script>
   (async()=>{
     const state=document.getElementById('state');
-    const build='1.1.0-pages-20260712';
+    const build='1.1.1-pages-20260713';
     const hex=buffer=>[...new Uint8Array(buffer)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
-    const orientationCss=String.raw`
+    const interactionCss=String.raw`
 .orientation-overlay{position:fixed;z-index:9999;inset:0;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));background:radial-gradient(circle at 50% 40%,rgba(38,104,118,.3),transparent 46%),rgba(2,10,15,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:none}.orientation-overlay[hidden]{display:none}.orientation-card{width:min(390px,100%);padding:26px 24px;border-radius:24px;text-align:center;background:linear-gradient(180deg,rgba(25,51,63,.94),rgba(7,21,30,.94));border:1px solid rgba(190,233,246,.18);box-shadow:0 18px 52px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.05)}.orientation-card h2,.orientation-card p{margin:0}.orientation-card h2{margin-top:15px;font-size:24px;letter-spacing:.08em}.orientation-card p{margin-top:9px;color:#9eb8c4;font-size:12px;line-height:1.65}.orientation-card button{width:100%;min-height:46px;margin-top:18px;border:0;border-radius:12px;background:linear-gradient(135deg,#7ff2c2,#6fdcff);color:#05202a;font:900 14px system-ui;cursor:pointer}.orientation-card button:active{transform:scale(.98)}.orientation-card small{display:block;margin-top:10px;color:#7f9aa6;font-size:10px}.orientation-phone{position:relative;width:66px;height:102px;margin:0 auto;border:3px solid #9df7dc;border-radius:15px;box-shadow:0 0 28px rgba(115,230,255,.22);animation:orientation-turn 1.7s ease-in-out infinite}.orientation-phone:before{content:"";position:absolute;left:50%;bottom:6px;width:12px;height:3px;border-radius:999px;background:#9df7dc;transform:translateX(-50%)}.orientation-phone i{position:absolute;inset:9px;border-radius:8px;background:linear-gradient(145deg,rgba(115,230,255,.24),rgba(127,242,194,.08))}.orientation-phone b{position:absolute;right:-33px;top:36px;color:#7ff2c2;font-size:25px;text-shadow:0 0 14px rgba(127,242,194,.45)}body.orientation-blocked #app{pointer-events:none}@keyframes orientation-turn{0%,22%{transform:rotate(0deg)}58%,100%{transform:rotate(90deg)}}@media(orientation:landscape){.orientation-phone{animation:none;transform:rotate(90deg)}}@media(prefers-reduced-motion:reduce){.orientation-phone{animation:none}}
+#joystick,.joystick,#joystick .joystick-ring,#joystickKnob{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;overscroll-behavior:contain}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:600px){#joystick.joystick{width:168px!important;height:168px!important;transform:none!important;transform-origin:center!important;left:calc(2px + var(--safe-left))!important;bottom:calc(0px + var(--safe-bottom))!important}#joystick .joystick-ring{inset:18px!important}}
 `;
     const orientationMarkup=`<div id="orientationOverlay" class="orientation-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="orientationTitle"><section class="orientation-card"><div class="orientation-phone" aria-hidden="true"><i></i><b>↻</b></div><h2 id="orientationTitle">请横屏游玩</h2><p>旋转设备后会自动切换回游戏。也可以尝试进入全屏并锁定横屏。</p><button id="requestLandscapeButton" type="button">进入横屏</button><small id="orientationStatus">等待设备旋转</small></section></div>`;
-    const orientationRuntime=String.raw`(function(){
+    const interactionRuntime=String.raw`(function(){
   const overlay=document.getElementById('orientationOverlay');
   const button=document.getElementById('requestLandscapeButton');
   const status=document.getElementById('orientationStatus');
+  const root=document.getElementById('joystick');
+  const ring=root?.querySelector('.joystick-ring');
+  const knob=document.getElementById('joystickKnob');
   let pausedByOrientation=false;
   let scheduled=0;
+  let lastBlocked=null;
+  let touchPointer=null;
+  let touchActive=false;
+  const touchVector={x:0,y:0};
   const game=()=>globalThis.__FROSTBLADE_GAME__?.game;
   const mobileLike=()=>matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||navigator.userAgentData?.mobile===true||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   const blocked=()=>mobileLike()&&innerHeight>innerWidth;
+  function resetJoystick(resetLegacy=false){
+    if(root&&touchPointer!==null){try{if(root.hasPointerCapture?.(touchPointer))root.releasePointerCapture(touchPointer)}catch{}}
+    touchPointer=null;touchActive=false;touchVector.x=0;touchVector.y=0;
+    if(knob)knob.style.transform='translate(0,0)';
+    if(resetLegacy){try{globalThis.dispatchEvent(new Event('blur'))}catch{}}
+  }
+  function pointFromEvent(event){const points=event.getCoalescedEvents?.();return points?.length?points[points.length-1]:event}
+  function updateJoystick(event){
+    if(!root||!ring||!knob)return;
+    const point=pointFromEvent(event);
+    const rect=ring.getBoundingClientRect();
+    const centerX=rect.left+rect.width/2;
+    const centerY=rect.top+rect.height/2;
+    const dx=point.clientX-centerX;
+    const dy=point.clientY-centerY;
+    const distance=Math.hypot(dx,dy);
+    const radius=Math.max(34,Math.min(rect.width,rect.height)*.40);
+    const raw=Math.min(1,distance/radius);
+    const deadzone=.055;
+    const strength=raw<=deadzone?0:Math.pow((raw-deadzone)/(1-deadzone),.72);
+    const ux=distance?dx/distance:0;
+    const uy=distance?dy/distance:0;
+    touchVector.x=ux*strength;touchVector.y=uy*strength;touchActive=strength>0;
+    const travel=radius*strength;
+    knob.style.transform='translate('+(ux*travel)+'px,'+(uy*travel)+'px)';
+  }
+  function consume(event){event.preventDefault();event.stopImmediatePropagation()}
+  function onPointerDown(event){if(!root||blocked()||touchPointer!==null)return;consume(event);touchPointer=event.pointerId;try{root.setPointerCapture(event.pointerId)}catch{}updateJoystick(event)}
+  function onPointerMove(event){if(event.pointerId!==touchPointer)return;consume(event);updateJoystick(event)}
+  function onPointerEnd(event){if(event.pointerId!==touchPointer)return;consume(event);resetJoystick(false)}
+  if(root){
+    root.addEventListener('pointerdown',onPointerDown,{capture:true,passive:false});
+    root.addEventListener('pointermove',onPointerMove,{capture:true,passive:false});
+    root.addEventListener('pointerup',onPointerEnd,{capture:true,passive:false});
+    root.addEventListener('pointercancel',onPointerEnd,{capture:true,passive:false});
+    root.addEventListener('lostpointercapture',()=>resetJoystick(false),{passive:true});
+    root.addEventListener('contextmenu',event=>event.preventDefault());
+  }
+  const current=game();
+  if(current?.cb?.getMovement&&!current.cb.__landscapeJoystickPatched){
+    const originalMovement=current.cb.getMovement;
+    current.cb.getMovement=()=>{
+      const base=originalMovement?.()||{x:0,y:0};
+      if(!touchActive)return base;
+      let x=(base.x||0)+touchVector.x,y=(base.y||0)+touchVector.y;
+      const length=Math.hypot(x,y);
+      return length>1?{x:x/length,y:y/length}:{x,y};
+    };
+    Object.defineProperty(current.cb,'__landscapeJoystickPatched',{value:true});
+  }
   function update(){
     scheduled=0;
     const shouldBlock=blocked();
+    if(lastBlocked!==shouldBlock){resetJoystick(true);lastBlocked=shouldBlock}
     overlay.hidden=!shouldBlock;
     document.body.classList.toggle('orientation-blocked',shouldBlock);
-    const current=game();
+    const currentGame=game();
     if(shouldBlock){
       status.textContent='等待设备旋转';
-      if(current?.running&&!current.paused&&!current.awaitingChoice){pausedByOrientation=true;current.setPaused(true)}
+      if(currentGame?.running&&!currentGame.paused&&!currentGame.awaitingChoice){pausedByOrientation=true;currentGame.setPaused(true)}
       return;
     }
-    requestAnimationFrame(()=>current?.resize?.());
-    if(pausedByOrientation&&current?.running&&current.paused&&!current.awaitingChoice)current.setPaused(false);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>currentGame?.resize?.()));
+    if(pausedByOrientation&&currentGame?.running&&currentGame.paused&&!currentGame.awaitingChoice)currentGame.setPaused(false);
     pausedByOrientation=false;
   }
   function schedule(){if(scheduled)cancelAnimationFrame(scheduled);scheduled=requestAnimationFrame(update)}
@@ -61,12 +121,17 @@
   screen.orientation?.addEventListener?.('change',schedule);
   globalThis.visualViewport?.addEventListener?.('resize',schedule,{passive:true});
   document.addEventListener('fullscreenchange',schedule);
-  if(globalThis.__FROSTBLADE_GAME__){globalThis.__FROSTBLADE_GAME__.version='1.1.0-pages';globalThis.__FROSTBLADE_GAME__.orientation={update,isBlocked:blocked,requestLandscape}}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)resetJoystick(true)});
+  if(globalThis.__FROSTBLADE_GAME__){
+    globalThis.__FROSTBLADE_GAME__.version='1.1.1-pages';
+    globalThis.__FROSTBLADE_GAME__.orientation={update,isBlocked:blocked,requestLandscape};
+    globalThis.__FROSTBLADE_GAME__.joystick={reset:()=>resetJoystick(false),state:()=>({active:touchActive,x:touchVector.x,y:touchVector.y,pointerId:touchPointer})};
+  }
   update();
 })();`;
-    const injectOrientation=html=>html
-      .replace('</head>',`<style>${orientationCss}</style></head>`)
-      .replace('</body>',`${orientationMarkup}<scr`+`ipt>${orientationRuntime}</scr`+`ipt></body>`);
+    const injectEnhancements=html=>html
+      .replace('</head>',`<style>${interactionCss}</style></head>`)
+      .replace('</body>',`${orientationMarkup}<scr`+`ipt>${interactionRuntime}</scr`+`ipt></body>`);
     try{
       if(typeof DecompressionStream==='undefined')throw new Error('当前浏览器不支持流式解压，请升级浏览器');
       const manifestResponse=await fetch(`manifest.json?v=${build}`,{cache:'no-store'});
@@ -88,7 +153,7 @@
         const digest=hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(originalHtml)));
         if(digest!==manifest.sourceSha256)throw new Error('游戏资源校验失败，请刷新后重试');
       }
-      const enhancedHtml=injectOrientation(originalHtml);
+      const enhancedHtml=injectEnhancements(originalHtml);
       document.open();document.write(enhancedHtml);document.close();
     }catch(error){
       console.error(error);
