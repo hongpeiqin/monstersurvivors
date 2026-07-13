@@ -67,27 +67,33 @@ jobs:
           print(f"validated Frostblade payload: {digest}")
           PY
 
-      - name: Keep the old v131 URL working
+      - name: Preserve versioned entry URLs
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p frostblade-survivors/v131
-          cat > frostblade-survivors/v131/index.html <<'HTML'
+          redirect_page() {
+            local target="$1"
+            local output="$2"
+            mkdir -p "$(dirname "$output")"
+            cat > "$output" <<HTML
           <!doctype html>
           <html lang="zh-CN">
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
             <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-            <meta http-equiv="refresh" content="0;url=../?v=1.3.1-fixed-20260713">
+            <meta http-equiv="refresh" content="0;url=${target}">
             <title>霜刃幸存者 v1.3.1</title>
           </head>
           <body>
-            <a href="../?v=1.3.1-fixed-20260713">进入游戏</a>
-            <script>location.replace('../?v=1.3.1-fixed-20260713');</script>
+            <a href="${target}">进入游戏</a>
+            <script>location.replace('${target}');</script>
           </body>
           </html>
           HTML
+          }
+          redirect_page '../?v=1.3.1-materialized-20260713' frostblade-survivors/v131/index.html
+          redirect_page '../?v=1.3.1-materialized-20260713' frostblade-survivors/v131-fixed/index.html
           touch frostblade-survivors/.nojekyll
 
       - name: Commit repaired static files
