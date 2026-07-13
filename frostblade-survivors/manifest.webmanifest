@@ -1,0 +1,15 @@
+{
+  "name": "霜刃幸存者：七夜远征",
+  "short_name": "霜刃幸存者",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07141c",
+  "theme_color": "#07141c",
+  "lang": "zh-CN",
+  "description": "2.5D 割草生存游戏，包含七夜战役、每日试炼、永久成长与无尽模式。",
+  "orientation": "landscape",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ]
+}
