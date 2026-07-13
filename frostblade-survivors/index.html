@@ -4,13 +4,171 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07141c">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="refresh" content="0;url=./v131-fixed/?v=1.3.1-pages-repaired-20260713">
-  <title>霜刃幸存者 v1.3.1</title>
-  <style>html,body{width:100%;height:100%;margin:0;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{display:grid;place-items:center;text-align:center}a{color:#7ff2c2}</style>
+  <meta name="description" content="霜刃幸存者：七夜远征。一款支持桌面与移动端的 2.5D 割草生存游戏。">
+  <title>霜刃幸存者：七夜远征 · v1.3.1</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css?v=1.3.1">
 </head>
 <body>
-  <main><strong>正在进入霜刃幸存者 v1.3.1</strong><p><a href="./v131-fixed/?v=1.3.1-pages-repaired-20260713">点击继续</a></p></main>
-  <script>location.replace('./v131-fixed/?v=1.3.1-pages-repaired-20260713');</script>
+  <div id="app">
+    <canvas id="gameCanvas" aria-label="霜刃幸存者游戏画面" data-i18n-aria="app.canvas"></canvas>
+
+    <div id="orientationOverlay" class="orientation-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="orientationTitle">
+      <section class="orientation-card glass">
+        <div class="orientation-phone" aria-hidden="true"><i></i><b>↻</b></div>
+        <h2 id="orientationTitle" data-i18n="orientation.title">请横屏游玩</h2>
+        <p data-i18n="orientation.desc">旋转设备后会自动切换回游戏。也可以尝试进入全屏并锁定横屏。</p>
+        <button id="requestLandscapeButton" class="primary-button" type="button" data-i18n="orientation.enter">进入横屏</button>
+        <small id="orientationStatus" data-i18n="orientation.waiting">等待设备旋转</small>
+      </section>
+    </div>
+
+    <section id="menuScreen" class="screen active" aria-label="主菜单" data-i18n-aria="menu.aria">
+      <header class="topbar glass">
+        <div class="brand">
+          <span class="brand-mark">❄</span>
+          <div><strong data-i18n="app.title">霜刃幸存者</strong><small data-i18n="app.subtitle">七夜远征 · 2.5D 割草生存</small></div>
+        </div>
+        <div class="wallet">
+          <span title="远征金币" data-i18n-title="wallet.coins">🪙 <b id="coinText">0</b></span>
+          <span title="霜晶" data-i18n-title="wallet.shards">◆ <b id="shardText">0</b></span>
+          <button id="openSettings" class="icon-button" type="button" aria-label="打开设置" data-i18n-aria="settings.open">⚙</button>
+        </div>
+      </header>
+
+      <nav id="mobileMenuTabs" class="mobile-tabs glass" aria-label="主页切换" data-i18n-aria="menu.tabsAria">
+        <button class="mobile-tab active" data-tab="campaign" type="button" data-i18n="menu.tab.campaign">远征</button>
+        <button class="mobile-tab" data-tab="profile" type="button" data-i18n="menu.tab.profile">英雄</button>
+        <button class="mobile-tab" data-tab="meta" type="button" data-i18n="menu.tab.meta">营地</button>
+        <button class="mobile-tab" data-tab="records" type="button" data-i18n="menu.tab.records">记录</button>
+      </nav>
+
+      <main class="menu-grid">
+        <section class="campaign-panel glass panel" data-menu-panel="campaign">
+          <div class="panel-head">
+            <div><h1 data-i18n="campaign.title">七夜远征</h1><p data-i18n="campaign.desc">推荐每天推进一夜。没有强制时间锁，人类已经被够多日历支配了。</p></div>
+            <div id="streakBadge" class="streak-badge">连续 1 天</div>
+          </div>
+          <div id="dayList" class="day-list"></div>
+          <div class="mode-row">
+            <button id="dailyModeButton" class="mode-card" type="button">
+              <span data-i18n="campaign.daily">每日试炼</span><small id="dailyModeDesc" data-i18n="campaign.dailyDesc">今日随机词缀 · 独立奖励</small>
+            </button>
+            <button id="endlessModeButton" class="mode-card" type="button" disabled>
+              <span data-i18n="campaign.endless">无尽冰原</span><small data-i18n="campaign.endlessLocked">通关第七夜后解锁</small>
+            </button>
+          </div>
+        </section>
+
+        <aside class="profile-column" data-menu-panel="profile">
+          <section class="hero-panel glass panel">
+            <div class="panel-head compact"><div><h2 data-i18n="heroes.title">远征者</h2><p data-i18n="heroes.desc">英雄拥有不同初始武器和成长方向。</p></div></div>
+            <div id="heroList" class="hero-list"></div>
+          </section>
+
+          <section class="daily-panel glass panel">
+            <div class="panel-head compact">
+              <div><h2 data-i18n="daily.title">今日补给</h2><p id="dailyDateText" data-i18n="daily.refresh">每日刷新</p></div>
+              <button id="claimDailyButton" class="small-button primary" type="button" data-i18n="daily.claim">领取</button>
+            </div>
+            <div id="contractList" class="contract-list"></div>
+          </section>
+        </aside>
+
+        <section class="meta-panel glass panel" data-menu-panel="meta">
+          <div class="panel-head compact"><div><h2 data-i18n="meta.title">营地天赋</h2><p data-i18n="meta.desc">永久强化，成本逐级增长。割草游戏最忠诚的伙伴永远是复利。</p></div></div>
+          <div id="metaUpgradeList" class="meta-upgrade-list"></div>
+        </section>
+
+        <section class="records-panel glass panel" data-menu-panel="records">
+          <div class="panel-head compact"><div><h2 data-i18n="records.title">远征记录</h2><p data-i18n="records.desc">成就、图鉴和累计数据。</p></div></div>
+          <div id="recordSummary" class="record-summary"></div>
+          <div id="achievementList" class="achievement-list"></div>
+        </section>
+      </main>
+
+      <footer class="menu-footer" data-i18n="controls.footer">WASD / 方向键移动 · J 手动斩击 · K 冲刺 · L 觉醒 · U 霜晶召回</footer>
+    </section>
+
+    <section id="gameScreen" class="screen" aria-label="游戏界面" data-i18n-aria="game.aria">
+      <div id="hudTop" class="hud-top">
+        <div class="hud-card glass">
+          <div class="hud-line"><strong id="runTitle" data-i18n="game.firstNight">第一夜</strong><span id="runTimer">06:00</span></div>
+          <div class="bar hp-bar"><i id="hpFill"></i><span id="hpText">100 / 100</span></div>
+          <div class="bar xp-bar"><i id="xpFill"></i><span id="levelText">等级 1</span></div>
+          <div class="hud-line muted"><span><span data-i18n="game.kills">击破</span> <b id="killText">0</b></span><span><span data-i18n="game.coins">金币</span> <b id="runCoinText">0</b></span><span id="enemyText">敌人 0</span></div>
+        </div>
+        <div class="hud-actions">
+          <button id="pauseButton" class="icon-button glass" type="button" aria-label="暂停" data-i18n-aria="game.pause">Ⅱ</button>
+        </div>
+      </div>
+
+      <div id="bossBar" class="boss-bar glass" hidden>
+        <div><strong id="bossName">Boss</strong><span id="bossPhase">终夜降临</span></div>
+        <div class="bar"><i id="bossHpFill"></i></div>
+      </div>
+
+      <div id="weaponStrip" class="weapon-strip"></div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <div id="joystick" class="joystick" aria-label="移动摇杆" data-i18n-aria="game.joystick">
+        <div class="joystick-ring"><div id="joystickKnob"></div></div>
+      </div>
+
+      <div id="activeButtons" class="active-buttons" aria-label="主动技能" data-i18n-aria="game.skills">
+        <button class="active-skill manual" data-active="manual" type="button"><b data-i18n="skills.manual">斩</b><span>J</span><i></i></button>
+        <button class="active-skill dash" data-active="dash" type="button"><b data-i18n="skills.dash">突</b><span>K</span><i></i></button>
+        <button class="active-skill ultimate" data-active="ultimate" type="button"><b data-i18n="skills.ultimate">觉</b><span>L</span><i></i></button>
+        <button class="active-skill magnet" data-active="magnet" type="button"><b data-i18n="skills.magnet">召</b><span>U</span><i></i></button>
+      </div>
+    </section>
+
+    <div id="levelUpOverlay" class="overlay" hidden>
+      <section class="modal level-modal glass">
+        <header><span data-i18n="levelup.label">等级提升</span><strong id="levelUpTitle">选择一项强化</strong><small id="rerollText">重抽次数 0</small></header>
+        <div id="levelChoiceList" class="level-choice-list"></div>
+        <footer><button id="rerollButton" class="small-button" type="button" data-i18n="levelup.reroll">重抽</button></footer>
+      </section>
+    </div>
+
+    <div id="pauseOverlay" class="overlay" hidden>
+      <section class="modal pause-modal glass">
+        <h2 data-i18n="pause.title">远征暂停</h2>
+        <p data-i18n="pause.desc">怪物终于也获得了法定休息时间。</p>
+        <button id="resumeButton" class="primary-button" type="button" data-i18n="pause.resume">继续战斗</button>
+        <button id="pauseSettingsButton" class="secondary-button" type="button" data-i18n="pause.settings">设置</button>
+        <button id="quitRunButton" class="danger-button" type="button" data-i18n="pause.quit">结束本局</button>
+      </section>
+    </div>
+
+    <div id="runEndOverlay" class="overlay" hidden>
+      <section class="modal result-modal glass">
+        <div id="resultEmblem" class="result-emblem">✦</div>
+        <h2 id="resultTitle" data-i18n="result.complete">远征完成</h2>
+        <p id="resultSubtitle" data-i18n="result.defaultSubtitle">战场暂时安静了几秒。</p>
+        <div id="resultStats" class="result-stats"></div>
+        <div id="resultRewards" class="result-rewards"></div>
+        <button id="resultContinueButton" class="primary-button" type="button" data-i18n="result.return">返回营地</button>
+      </section>
+    </div>
+
+    <div id="settingsOverlay" class="overlay" hidden>
+      <section class="modal settings-modal glass" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <header class="settings-head"><div><h2 id="settingsTitle" data-i18n="settings.title">游戏设置</h2><p data-i18n="settings.desc">视觉反馈可以关，胜负欲一般关不掉。</p></div><button id="closeSettings" class="icon-button" type="button">×</button></header>
+        <label class="setting-row language-row"><span><b data-i18n="settings.language">语言</b><small data-i18n="settings.languageDesc">切换后立即生效并自动保存。</small></span><select id="languageSelect" aria-label="Language"></select></label>
+        <label class="setting-row"><span><b data-i18n="settings.bgm">背景音乐</b><small data-i18n="settings.bgmDesc">程序化循环配乐</small></span><output id="bgmValue">45%</output><input id="bgmVolume" type="range" min="0" max="1" step="0.01"></label>
+        <label class="setting-row"><span><b data-i18n="settings.sfx">攻击音效</b><small data-i18n="settings.sfxDesc">挥砍、命中、升级和首领</small></span><output id="sfxValue">70%</output><input id="sfxVolume" type="range" min="0" max="1" step="0.01"></label>
+        <div class="setting-row segmented-row"><span><b data-i18n="settings.quality">粒子质量</b><small data-i18n="settings.qualityDesc">高级保留完整风格，并继续受实时预算保护。</small></span><div class="segmented" id="particleQuality">
+          <button data-value="off" type="button" data-i18n="settings.off">关</button><button data-value="medium" type="button" data-i18n="settings.medium">中等</button><button data-value="high" type="button" data-i18n="settings.high">高级</button>
+        </div></div>
+        <label class="setting-row switch-row"><span><b data-i18n="settings.shake">界面抖动</b><small data-i18n="settings.shakeDesc">关闭可减少视觉晃动与少量合成开销。</small></span><input id="screenShakeToggle" type="checkbox"><i></i></label>
+        <label class="setting-row switch-row"><span><b data-i18n="settings.vibration">设备震动</b><small data-i18n="settings.vibrationDesc">仅支持 Vibration API 的设备生效。</small></span><input id="vibrationToggle" type="checkbox"><i></i></label>
+        <label class="setting-row switch-row"><span><b data-i18n="settings.damage">伤害数字</b><small data-i18n="settings.damageDesc">怪物密集时关闭可进一步减轻绘制压力。</small></span><input id="damageNumberToggle" type="checkbox"><i></i></label>
+        <label class="setting-row switch-row"><span><b data-i18n="settings.battery">省电模式</b><small data-i18n="settings.batteryDesc">限制为 30 FPS，同时降低 DPR 与次要特效。</small></span><input id="batterySaverToggle" type="checkbox"><i></i></label>
+        <footer><button id="resetSaveButton" class="danger-button small" type="button" data-i18n="settings.reset">重置存档</button><span id="saveVersionText">存档版本 1</span></footer>
+      </section>
+    </div>
+  </div>
+  <script type="module" src="./js/main.js?v=1.3.1"></script>
 </body>
 </html>
