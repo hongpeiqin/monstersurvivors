@@ -1,7 +1,9 @@
 {
   "status": "success",
-  "source_commit": "13a45c8f59d53120f9886af860fc69eaba7583c6",
+  "public_smoke_test": "passed",
+  "source_commit": "e9d56c437c294322e674d06602dd48ea3fa590da",
   "page_url": "https://hongpeiqin.github.io/monstersurvivors/",
+  "game_url": "https://hongpeiqin.github.io/monstersurvivors/frostblade-survivors/?v=1.3.1-static-29275857380",
   "game_path": "frostblade-survivors/",
   "game_version": "1.3.1-static"
 }
