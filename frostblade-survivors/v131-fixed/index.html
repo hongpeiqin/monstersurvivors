@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07141c">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="description" content="霜刃幸存者：七夜远征 v1.3.1，多语言移动端优化版。">
+  <title>霜刃幸存者 v1.3.1 · 正在载入</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#07141c;color:#effcff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{display:grid;place-items:center}.boot{text-align:center;padding:24px;max-width:720px}.sigil{width:62px;height:62px;margin:0 auto 17px;border-radius:50%;border:2px solid rgba(115,230,255,.2);border-top-color:#7ff2c2;border-right-color:#73e6ff;box-shadow:0 0 28px rgba(115,230,255,.22);animation:spin .75s linear infinite}.boot strong{display:block;font-size:18px;letter-spacing:.1em}.boot p{margin:9px 0 0;color:#9eb8c4;font-size:11px;line-height:1.55;overflow-wrap:anywhere}.boot a{display:inline-block;margin-top:15px;color:#7ff2c2}@keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <main class="boot"><div class="sigil"></div><strong>正在开启七夜远征</strong><p id="state">读取完整游戏包…</p></main>
+  <script>
+  (async()=>{
+    const state=document.getElementById('state');
+    const build='1.3.1-pages-repaired-20260713';
+    const deployBlob='0e686e4072ab15361b18f4e246186b3509ed8dba';
+    const decoder=new TextDecoder();
+    const encoder=new TextEncoder();
+    const clean=value=>String(value||'').replace(/\s/g,'');
+    const fromBase64=value=>Uint8Array.from(atob(clean(value)),char=>char.charCodeAt(0));
+    const hex=buffer=>[...new Uint8Array(buffer)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+    const u16=(data,offset)=>data[offset]|data[offset+1]<<8;
+    const u32=(data,offset)=>(data[offset]|data[offset+1]<<8|data[offset+2]<<16|data[offset+3]<<24)>>>0;
+
+    async function inflate(bytes,format){
+      return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format))).arrayBuffer());
+    }
+
+    async function unzip(data){
+      let eocd=-1;
+      for(let index=data.length-22;index>=Math.max(0,data.length-65557);index--){
+        if(u32(data,index)===0x06054b50){eocd=index;break;}
+      }
+      if(eocd<0)throw new Error('未找到 ZIP 目录');
+      const total=u16(data,eocd+10);
+      let cursor=u32(data,eocd+16);
+      const files=new Map();
+      for(let index=0;index<total;index++){
+        if(u32(data,cursor)!==0x02014b50)throw new Error('ZIP 中央目录损坏');
+        const method=u16(data,cursor+10);
+        const compressedSize=u32(data,cursor+20);
+        const nameLength=u16(data,cursor+28);
+        const extraLength=u16(data,cursor+30);
+        const commentLength=u16(data,cursor+32);
+        const localOffset=u32(data,cursor+42);
+        const name=decoder.decode(data.slice(cursor+46,cursor+46+nameLength));
+        if(u32(data,localOffset)!==0x04034b50)throw new Error('ZIP 文件头损坏');
+        const localNameLength=u16(data,localOffset+26);
+        const localExtraLength=u16(data,localOffset+28);
+        const dataStart=localOffset+30+localNameLength+localExtraLength;
+        const packed=data.slice(dataStart,dataStart+compressedSize);
+        let bytes;
+        if(method===0)bytes=packed;
+        else if(method===8)bytes=await inflate(packed,'deflate-raw');
+        else throw new Error(`不支持的 ZIP 压缩方式 ${method}`);
+        files.set(name,bytes);
+        cursor+=46+nameLength+extraLength+commentLength;
+      }
+      return files;
+    }
+
+    try{
+      if(typeof DecompressionStream==='undefined')throw new Error('当前浏览器不支持流式解压，请升级浏览器');
+      state.textContent='下载经过校验的完整游戏包…';
+      const response=await fetch(`https://api.github.com/repos/hongpeiqin/monstersurvivors/git/blobs/${deployBlob}?v=${build}`,{
+        cache:'no-store',headers:{Accept:'application/vnd.github+json'}
+      });
+      if(!response.ok)throw new Error(`游戏包 HTTP ${response.status}`);
+      const payload=await response.json();
+      const zipBase64=decoder.decode(fromBase64(payload.content)).trim();
+      if(!/^[A-Za-z0-9+/=\s]+$/.test(zipBase64))throw new Error('游戏包编码无效');
+      const zipBytes=fromBase64(zipBase64);
+      state.textContent='解包游戏资源…';
+      const files=await unzip(zipBytes);
+      const root='frostblade-survivors/';
+      const manifestBytes=files.get(root+'manifest.json');
+      if(!manifestBytes)throw new Error('游戏清单缺失');
+      const manifest=JSON.parse(decoder.decode(manifestBytes));
+      const chunks=[];
+      for(let index=0;index<manifest.chunks.length;index++){
+        state.textContent=`校验战场模块 ${index+1}/${manifest.chunks.length}`;
+        const bytes=files.get(root+manifest.chunks[index]);
+        if(!bytes)throw new Error(`${manifest.chunks[index]} 缺失`);
+        chunks.push(decoder.decode(bytes).trim());
+      }
+      const gzipBytes=fromBase64(chunks.join(''));
+      const htmlBytes=await inflate(gzipBytes,'gzip');
+      const html=decoder.decode(htmlBytes);
+      if(globalThis.crypto?.subtle&&manifest.sourceSha256){
+        const digest=hex(await crypto.subtle.digest('SHA-256',encoder.encode(html)));
+        if(digest!==manifest.sourceSha256)throw new Error('游戏资源 SHA-256 校验失败');
+      }
+      if(!html.includes('__FROSTBLADE_GAME__')||!html.includes('1.3.1'))throw new Error('游戏版本校验失败');
+      document.open();document.write(html);document.close();
+    }catch(error){
+      console.error(error);
+      document.body.innerHTML=`<main class="boot"><strong>载入失败</strong><p>${String(error.message||error)}</p><a href="./?retry=${Date.now()}">重新载入</a></main>`;
+    }
+  })();
+  </script>
+</body>
+</html>
