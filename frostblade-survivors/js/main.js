@@ -11,6 +11,49 @@ const audio = new AudioEngine(() => store.data.settings);
 const ui = new UIController(store, audio);
 let input = null;
 
+function installStableHighRefreshLoop(instance) {
+  const lastKey = 'lastTime' in instance ? 'lastTime' : 'last';
+  const accumulatorKey = 'accumulator' in instance ? 'accumulator' : 'acc';
+  const lastRenderedKey = 'lastRendered' in instance ? 'lastRendered' : 'lastRender';
+  instance.inputDirty = false;
+  instance.loop = function loop(now) {
+    const previous = Number.isFinite(this[lastKey]) ? this[lastKey] : now;
+    const ms = Math.min(80, Math.max(0, now - previous));
+    this[lastKey] = now;
+    this.frameEma = this.frameEma * 0.92 + ms * 0.08;
+
+    // Accumulate elapsed time on every rAF. The old loop only accumulated on rendered
+    // frames, so 90/120 Hz phones could silently run movement at half speed.
+    if (this.running && !this.paused && !this.awaitingChoice) {
+      const accumulated = Number.isFinite(this[accumulatorKey]) ? this[accumulatorKey] : 0;
+      this[accumulatorKey] = Math.min(0.1, accumulated + ms / 1000);
+    }
+
+    const target = this.settings.batterySaver ? 1000 / 30 : 1000 / 60;
+    const previousRender = Number.isFinite(this[lastRenderedKey]) ? this[lastRenderedKey] : 0;
+    if (now - previousRender >= target - 1) {
+      this[lastRenderedKey] = now;
+      if (this.running && !this.paused && !this.awaitingChoice) {
+        const step = 1 / 60;
+        let updates = 0;
+        while (this[accumulatorKey] + 1e-6 >= step && updates++ < 4) {
+          this.update(step);
+          this[accumulatorKey] -= step;
+        }
+        // Consume only real elapsed remainder after a fresh input change.
+        if (updates === 0 && this.inputDirty && this[accumulatorKey] >= 1 / 360) {
+          const partial = Math.min(step, this[accumulatorKey]);
+          this.update(partial);
+          this[accumulatorKey] -= partial;
+        }
+      }
+      this.inputDirty = false;
+      this.render();
+    }
+    requestAnimationFrame(value => this.loop(value));
+  };
+}
+
 const game = new Game({
   canvas: document.getElementById('gameCanvas'),
   store,
@@ -30,10 +73,19 @@ const game = new Game({
   },
 });
 
+installStableHighRefreshLoop(game);
+
 input = new InputManager({
   joystick: document.getElementById('joystick'),
   knob: document.getElementById('joystickKnob'),
   activeButtons: document.getElementById('activeButtons'),
+  onMove(vector) {
+    game.inputDirty = true;
+    const length = Math.hypot(vector.x, vector.y);
+    if (length > 0.01 && game.running && !game.player.dead) {
+      game.player.facing = { x: vector.x / length, y: vector.y / length };
+    }
+  },
   onActive(action) {
     audio.ensure();
     if (action === 'manual-release') { game.setManualHeld(false); return; }
@@ -128,8 +180,16 @@ globalThis.visualViewport?.addEventListener?.('resize', scheduleOrientationCheck
 document.addEventListener('fullscreenchange', scheduleOrientationCheck);
 updateOrientationGate();
 
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js?v=1.3.2')
+      .then(registration => registration.update())
+      .catch(() => {});
+  }, { once: true });
+}
+
 window.__FROSTBLADE_GAME__ = {
-  version: '1.3.1',
+  version: '1.3.2',
   game,
   store,
   startDay(dayId = 1) { game.startRun({ mode: 'campaign', dayId }); return game.debugState(); },
