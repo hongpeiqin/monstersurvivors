@@ -68,6 +68,46 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: Smoke-test public game URL
+        id: smoke
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          game_url="${PAGE_URL%/}/frostblade-survivors/?v=1.3.1-static-${GITHUB_RUN_ID}"
+          index_url="${PAGE_URL%/}/frostblade-survivors/index.html?v=1.3.1-static-${GITHUB_RUN_ID}"
+          css_url="${PAGE_URL%/}/frostblade-survivors/styles.css?v=1.3.1-static-${GITHUB_RUN_ID}"
+          main_url="${PAGE_URL%/}/frostblade-survivors/js/main.js?v=1.3.1-static-${GITHUB_RUN_ID}"
+          i18n_url="${PAGE_URL%/}/frostblade-survivors/js/i18n.js?v=1.3.1-static-${GITHUB_RUN_ID}"
+          legacy_url="${PAGE_URL%/}/frostblade-survivors/v131-fixed/?v=1.3.1-static-${GITHUB_RUN_ID}"
+
+          success=0
+          for attempt in {1..40}; do
+            if curl --fail --location --silent --show-error --max-time 20 "$index_url" -o /tmp/public-index.html \
+              && grep -q '霜刃幸存者' /tmp/public-index.html \
+              && grep -q 'styles.css?v=1.3.1' /tmp/public-index.html \
+              && curl --fail --silent --show-error --max-time 20 "$css_url" -o /tmp/public-styles.css \
+              && curl --fail --silent --show-error --max-time 20 "$main_url" -o /tmp/public-main.js \
+              && curl --fail --silent --show-error --max-time 20 "$i18n_url" -o /tmp/public-i18n.js \
+              && grep -q '__FROSTBLADE_GAME__' /tmp/public-main.js \
+              && grep -q 'zh-CN' /tmp/public-i18n.js; then
+                success=1
+                break
+            fi
+            sleep 3
+          done
+          test "$success" = 1
+
+          curl --fail --location --silent --show-error --max-time 20 "$game_url" -o /tmp/public-root.html
+          grep -q '霜刃幸存者' /tmp/public-root.html
+          curl --fail --location --silent --show-error --max-time 20 "$legacy_url" -o /tmp/public-legacy.html
+          grep -q '霜刃幸存者' /tmp/public-legacy.html
+
+          node --check /tmp/public-main.js
+          node --check /tmp/public-i18n.js
+          echo "game_url=$game_url" >> "$GITHUB_OUTPUT"
+
       - name: Record successful deployment
         shell: bash
         run: |
@@ -75,8 +115,10 @@ jobs:
           cat > .pages-deployment.json <<JSON
           {
             "status": "success",
+            "public_smoke_test": "passed",
             "source_commit": "${GITHUB_SHA}",
             "page_url": "${{ steps.deployment.outputs.page_url }}",
+            "game_url": "${{ steps.smoke.outputs.game_url }}",
             "game_path": "frostblade-survivors/",
             "game_version": "1.3.1-static"
           }
