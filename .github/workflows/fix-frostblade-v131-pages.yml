@@ -5,7 +5,6 @@ on:
     branches: ["main"]
     paths:
       - ".github/workflows/fix-frostblade-v131-pages.yml"
-      - ".github/assets/frostblade-direct-v131/**"
   workflow_dispatch:
 
 permissions:
@@ -14,6 +13,10 @@ permissions:
 concurrency:
   group: frostblade-v131-direct-materialize
   cancel-in-progress: true
+
+env:
+  SOURCE_BLOB_SHA: 0e686e4072ab15361b18f4e246186b3509ed8dba
+  SOURCE_HTML_SHA256: 5b0a067587e75dd7b588495b49ccd29961136a4bc72625e410a42867b42b0985
 
 jobs:
   publish:
@@ -26,19 +29,22 @@ jobs:
 
       - name: Restore and verify direct HTML
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cat \
-            .github/assets/frostblade-direct-v131/part-00.txt \
-            .github/assets/frostblade-direct-v131/part-01.txt \
-            .github/assets/frostblade-direct-v131/part-02.txt \
-            .github/assets/frostblade-direct-v131/part-03.txt \
-            | tr -d '\r\n\t ' \
-            | base64 --decode > /tmp/frostblade-index.html.xz
+          curl --fail --location --silent --show-error \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github.raw+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/blobs/${SOURCE_BLOB_SHA}" \
+            --output /tmp/frostblade-index.html.gz.b64
 
-          xz --test /tmp/frostblade-index.html.xz
-          xz --decompress --stdout /tmp/frostblade-index.html.xz > /tmp/frostblade-index.html
-          echo "5b0a067587e75dd7b588495b49ccd29961136a4bc72625e410a42867b42b0985  /tmp/frostblade-index.html" | sha256sum --check --strict
+          tr -d '\r\n\t ' < /tmp/frostblade-index.html.gz.b64 \
+            | base64 --decode > /tmp/frostblade-index.html.gz
+
+          gzip --test /tmp/frostblade-index.html.gz
+          gzip --decompress --stdout /tmp/frostblade-index.html.gz > /tmp/frostblade-index.html
+          echo "${SOURCE_HTML_SHA256}  /tmp/frostblade-index.html" | sha256sum --check --strict
           grep -q '__FROSTBLADE_GAME__' /tmp/frostblade-index.html
           grep -q '1.3.1' /tmp/frostblade-index.html
           ! grep -q 'DecompressionStream' /tmp/frostblade-index.html
@@ -61,12 +67,12 @@ jobs:
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
             <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-            <meta http-equiv="refresh" content="0;url=../?v=1.3.1-direct-20260713">
+            <meta http-equiv="refresh" content="0;url=../?v=1.3.1-direct-20260713-r2">
             <title>霜刃幸存者 v1.3.1</title>
           </head>
           <body>
-            <a href="../?v=1.3.1-direct-20260713">进入游戏</a>
-            <script>location.replace('../?v=1.3.1-direct-20260713');</script>
+            <a href="../?v=1.3.1-direct-20260713-r2">进入游戏</a>
+            <script>location.replace('../?v=1.3.1-direct-20260713-r2');</script>
           </body>
           </html>
           HTML
