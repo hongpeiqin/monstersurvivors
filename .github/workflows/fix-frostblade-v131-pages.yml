@@ -1,0 +1,106 @@
+name: Repair Frostblade v1.3.1 Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/fix-frostblade-v131-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: frostblade-v131-repair
+  cancel-in-progress: true
+
+env:
+  DEPLOY_BLOB_SHA: 0e686e4072ab15361b18f4e246186b3509ed8dba
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and validate deployment package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github.raw+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/blobs/${DEPLOY_BLOB_SHA}" \
+            --output /tmp/frostblade-deploy.b64
+          tr -d '\r\n\t ' < /tmp/frostblade-deploy.b64 | base64 --decode > /tmp/frostblade-deploy.zip
+          unzip -t /tmp/frostblade-deploy.zip
+          rm -rf frostblade-survivors
+          unzip -q /tmp/frostblade-deploy.zip -d .
+          test -f frostblade-survivors/index.html
+          test -f frostblade-survivors/manifest.json
+          test -f frostblade-survivors/payload-v131/p00.txt
+          test -f frostblade-survivors/payload-v131/p06.txt
+
+      - name: Verify payload integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json
+          from pathlib import Path
+
+          root = Path('frostblade-survivors')
+          manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+          packed = ''.join((root / item).read_text(encoding='utf-8').strip() for item in manifest['chunks'])
+          raw = base64.b64decode(packed, validate=True)
+          html = gzip.decompress(raw)
+          digest = hashlib.sha256(html).hexdigest()
+          if digest != manifest['sourceSha256']:
+              raise SystemExit(f"payload SHA mismatch: {digest} != {manifest['sourceSha256']}")
+          if b'__FROSTBLADE_GAME__' not in html or b'1.3.1' not in html:
+              raise SystemExit('unexpected Frostblade payload')
+          print(f"validated Frostblade payload: {digest}")
+          PY
+
+      - name: Keep the old v131 URL working
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p frostblade-survivors/v131
+          cat > frostblade-survivors/v131/index.html <<'HTML'
+          <!doctype html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+            <meta http-equiv="refresh" content="0;url=../?v=1.3.1-fixed-20260713">
+            <title>霜刃幸存者 v1.3.1</title>
+          </head>
+          <body>
+            <a href="../?v=1.3.1-fixed-20260713">进入游戏</a>
+            <script>location.replace('../?v=1.3.1-fixed-20260713');</script>
+          </body>
+          </html>
+          HTML
+          touch frostblade-survivors/.nojekyll
+
+      - name: Commit repaired static files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A frostblade-survivors
+          if git diff --cached --quiet; then
+            echo "Frostblade Pages files are already repaired."
+            exit 0
+          fi
+          git commit -m "fix: publish valid Frostblade v1.3.1 Pages payload"
+          git pull --rebase origin main
+          git push origin HEAD:main
