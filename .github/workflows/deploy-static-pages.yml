@@ -3,10 +3,12 @@ name: Deploy repository static files to GitHub Pages
 on:
   push:
     branches: ["main"]
+    paths-ignore:
+      - ".pages-deployment.json"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,6 +25,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Frostblade static files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f frostblade-survivors/index.html
+          test -f frostblade-survivors/styles.css
+          test -f frostblade-survivors/js/main.js
+          test -f frostblade-survivors/js/game.js
+          test -f frostblade-survivors/js/ui.js
+          test -f frostblade-survivors/js/i18n.js
+          grep -q 'v1.3.1' frostblade-survivors/index.html
+          grep -q '__FROSTBLADE_GAME__' frostblade-survivors/js/main.js
+          ! grep -q 'DecompressionStream' frostblade-survivors/index.html
+          ! grep -q 'payload-v131' frostblade-survivors/index.html
+          for file in frostblade-survivors/js/*.js; do node --check "$file"; done
+
+          python3 -m http.server 8123 --directory . >/tmp/frostblade-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/ >/tmp/frostblade-index.html; then break; fi
+            sleep 0.25
+          done
+          grep -q '霜刃幸存者' /tmp/frostblade-index.html
+          curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/styles.css >/dev/null
+          curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/js/main.js >/dev/null
+          curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/js/i18n.js >/dev/null
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -35,3 +67,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Record successful deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .pages-deployment.json <<JSON
+          {
+            "status": "success",
+            "source_commit": "${GITHUB_SHA}",
+            "page_url": "${{ steps.deployment.outputs.page_url }}",
+            "game_path": "frostblade-survivors/",
+            "game_version": "1.3.1-static"
+          }
+          JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .pages-deployment.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: record successful GitHub Pages deployment"
+          git pull --rebase origin main
+          git push origin HEAD:main
