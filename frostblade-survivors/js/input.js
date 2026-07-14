@@ -1,13 +1,22 @@
 export class InputManager {
-  constructor({ joystick, knob, activeButtons, onActive }) {
+  constructor({ joystick, knob, activeButtons, onActive, onMove }) {
     this.keys = new Set();
     this.joystick = { x: 0, y: 0 };
     this.pointerId = null;
     this.onActive = onActive;
+    this.onMove = onMove;
+    this.lastMove = { x: 0, y: 0 };
     this.enabled = true;
     this.bindKeyboard();
     this.bindJoystick(joystick, knob);
     this.bindButtons(activeButtons);
+  }
+
+  emitMove(force = false) {
+    const vector = this.vector();
+    if (!force && Math.abs(vector.x - this.lastMove.x) < 1e-5 && Math.abs(vector.y - this.lastMove.y) < 1e-5) return;
+    this.lastMove = { x: vector.x, y: vector.y };
+    this.onMove?.(vector);
   }
 
   bindKeyboard() {
@@ -15,6 +24,7 @@ export class InputManager {
       if (!this.enabled) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
       this.keys.add(event.code);
+      this.emitMove();
       if (event.repeat && event.code !== 'KeyJ' && event.code !== 'Space') return;
       if (event.code === 'KeyJ' || event.code === 'Space') this.onActive?.('manual');
       else if (event.code === 'KeyK') this.onActive?.('dash');
@@ -25,6 +35,7 @@ export class InputManager {
 
     addEventListener('keyup', event => {
       this.keys.delete(event.code);
+      this.emitMove();
       if (event.code === 'KeyJ' || event.code === 'Space') this.onActive?.('manual-release');
     });
     addEventListener('blur', () => this.reset());
@@ -53,8 +64,12 @@ export class InputManager {
     };
     const invalidateMetrics = () => { metrics = null; };
     const latestPoint = event => {
+      // Prefer the freshest coalesced sample. Predicted events can overshoot when the thumb
+      // reverses direction, so use them only when the browser has no coalesced samples.
       const coalesced = event.getCoalescedEvents?.();
-      return coalesced?.length ? coalesced[coalesced.length - 1] : event;
+      if (coalesced?.length) return coalesced[coalesced.length - 1];
+      const predicted = event.getPredictedEvents?.();
+      return predicted?.length ? predicted[predicted.length - 1] : event;
     };
 
     const update = event => {
@@ -64,25 +79,29 @@ export class InputManager {
       const dy = point.clientY - current.centerY;
       const distance = Math.hypot(dx, dy);
       const raw = Math.min(1, distance / current.radius);
-      const deadzone = 0.032;
+      const deadzone = 0.018;
 
       if (raw <= deadzone) {
         this.joystick.x = 0;
         this.joystick.y = 0;
         knob.style.transform = 'translate3d(0,0,0)';
+        this.emitMove();
         return;
       }
 
-      const step = Math.PI / 4;
-      const snappedAngle = Math.round(Math.atan2(dy, dx) / step) * step;
-      const unitX = Math.cos(snappedAngle);
-      const unitY = Math.sin(snappedAngle);
+      // Follow the thumb angle continuously and reach full movement speed immediately.
+      // The previous 45-degree snapping required the thumb to cross a 22.5-degree boundary
+      // before the character changed direction, which felt like directional latency next to WASD.
+      const unitX = dx / distance;
+      const unitY = dy / distance;
       this.joystick.x = Math.abs(unitX) < 1e-6 ? 0 : unitX;
       this.joystick.y = Math.abs(unitY) < 1e-6 ? 0 : unitY;
 
+      // The knob remains analog so the control still communicates how far the thumb moved.
       const visualStrength = Math.min(1, (raw - deadzone) / (1 - deadzone));
       const travel = current.radius * visualStrength;
       knob.style.transform = `translate3d(${unitX * travel}px,${unitY * travel}px,0)`;
+      this.emitMove();
     };
 
     const release = event => {
@@ -90,12 +109,15 @@ export class InputManager {
       if (this.pointerId !== null) {
         try {
           if (root.hasPointerCapture?.(this.pointerId)) root.releasePointerCapture(this.pointerId);
-        } catch {}
+        } catch {
+          // Browser may have released capture during orientation or fullscreen changes.
+        }
       }
       this.pointerId = null;
       this.joystick.x = 0;
       this.joystick.y = 0;
       knob.style.transform = 'translate3d(0,0,0)';
+      this.emitMove();
     };
 
     const onPointerMove = event => {
@@ -109,7 +131,7 @@ export class InputManager {
       event.preventDefault();
       refreshMetrics();
       this.pointerId = event.pointerId;
-      try { root.setPointerCapture(event.pointerId); } catch {}
+      try { root.setPointerCapture(event.pointerId); } catch { /* ignored */ }
       update(event);
     }, { capture: true, passive: false });
 
@@ -138,20 +160,25 @@ export class InputManager {
     if (!root) return;
     for (const button of root.querySelectorAll('[data-active]')) {
       const action = button.dataset.active;
-      const release = () => {
+      const release = event => {
         button.classList.remove('pressed');
+        button.setAttribute('aria-pressed', 'false');
+        if (event?.pointerId != null) {
+          try { if (button.hasPointerCapture?.(event.pointerId)) button.releasePointerCapture(event.pointerId); } catch {}
+        }
         if (action === 'manual') this.onActive?.('manual-release');
       };
       button.addEventListener('pointerdown', event => {
         if (!this.enabled) return;
         event.preventDefault();
-        button.setPointerCapture(event.pointerId);
+        try { button.setPointerCapture(event.pointerId); } catch {}
         button.classList.add('pressed');
+        button.setAttribute('aria-pressed', 'true');
         this.onActive?.(action);
       });
       button.addEventListener('pointerup', release);
       button.addEventListener('pointercancel', release);
-      button.addEventListener('pointerleave', release);
+      button.addEventListener('lostpointercapture', release);
     }
   }
 
@@ -172,6 +199,7 @@ export class InputManager {
     this.joystick.y = 0;
     this.onActive?.('manual-release');
     this.releaseJoystick?.();
+    this.emitMove(true);
   }
 
   setEnabled(value) {

@@ -1,0 +1,125 @@
+/* Frostblade v1.3.2 mobile layout and control tuning */
+:root{
+  --mobile-control-inset-x:max(24px,env(safe-area-inset-left,0px));
+  --mobile-control-inset-y:max(18px,env(safe-area-inset-bottom,0px));
+}
+
+html,body,#app,.screen{height:100%;height:100dvh;min-height:100%;}
+#menuScreen{overscroll-behavior:contain;scroll-padding-bottom:calc(28px + var(--safe-bottom));}
+
+/* Keep expedition card copy from colliding with the completion line. */
+.day-card{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  min-width:0!important;
+  min-height:118px!important;
+  padding:11px!important;
+}
+.day-card span,.day-card strong,.day-card small,.day-card em{min-width:0!important;}
+.day-card strong{line-height:1.22!important;}
+.day-card small{
+  margin-top:4px!important;
+  line-height:1.35!important;
+  min-height:2.7em!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+.day-card em{
+  position:static!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  margin-top:auto!important;
+  padding-top:7px!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.day-card .lock{position:absolute!important;top:9px!important;right:9px!important;}
+
+/* Strong, persistent touch feedback instead of relying on :active alone. */
+.active-skill{
+  touch-action:none!important;
+  transform-origin:center!important;
+  transition:transform 70ms cubic-bezier(.2,.9,.25,1),filter 70ms ease,box-shadow 70ms ease!important;
+  will-change:transform,filter!important;
+}
+.active-skill::after{
+  content:"";
+  position:absolute;
+  z-index:1;
+  inset:5px;
+  border-radius:50%;
+  border:2px solid rgba(222,252,255,.68);
+  box-shadow:inset 0 0 18px rgba(118,235,255,.24),0 0 14px rgba(118,235,255,.16);
+  opacity:0;
+  transform:scale(.72);
+  transition:opacity 70ms ease,transform 70ms ease;
+  pointer-events:none;
+}
+.active-skill.pressed,.active-skill:active{
+  transform:scale(.86)!important;
+  filter:brightness(1.28) saturate(1.12)!important;
+  box-shadow:0 4px 13px rgba(0,0,0,.34),inset 0 0 0 3px rgba(224,252,255,.24),inset 0 0 24px rgba(112,229,255,.18)!important;
+}
+.active-skill.pressed::after,.active-skill:active::after{opacity:1;transform:scale(1);}
+.active-skill.pressed b,.active-skill:active b{text-shadow:0 0 12px rgba(225,255,255,.82);}
+
+@media (pointer:coarse) and (orientation:landscape){
+  #menuScreen{
+    height:100dvh!important;
+    padding-bottom:calc(28px + var(--safe-bottom))!important;
+  }
+  .mobile-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:1fr!important;height:auto!important;}
+  .campaign-panel{margin-bottom:calc(20px + var(--safe-bottom))!important;}
+  .day-list{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;}
+  .day-card{min-height:112px!important;}
+
+  /* Slightly larger skills while keeping them clear of gesture edges. */
+  .active-buttons{
+    right:calc(32px + var(--safe-right))!important;
+    bottom:calc(24px + var(--safe-bottom))!important;
+    width:260px!important;
+    height:184px!important;
+    transform:scale(.74)!important;
+    transform-origin:right bottom!important;
+  }
+  .active-skill.manual{width:88px!important;height:88px!important;right:0!important;bottom:0!important;}
+  .active-skill.manual b{font-size:29px!important;}
+  .active-skill.dash{width:66px!important;height:66px!important;right:96px!important;bottom:7px!important;}
+  .active-skill.ultimate{width:70px!important;height:70px!important;right:8px!important;bottom:98px!important;}
+  .active-skill.magnet{width:62px!important;height:62px!important;right:105px!important;bottom:86px!important;}
+
+  .joystick{
+    left:calc(32px + var(--safe-left))!important;
+    bottom:calc(24px + var(--safe-bottom))!important;
+  }
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-width:899px){
+  .day-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .day-card{min-height:110px!important;}
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:430px){
+  #menuScreen{padding-bottom:calc(24px + var(--safe-bottom))!important;}
+  .day-card{min-height:104px!important;padding:9px!important;}
+  .day-card small{min-height:2.45em!important;}
+  .active-buttons{
+    right:calc(30px + var(--safe-right))!important;
+    bottom:calc(22px + var(--safe-bottom))!important;
+    transform:scale(.71)!important;
+  }
+  .joystick{
+    left:calc(30px + var(--safe-left))!important;
+    bottom:calc(22px + var(--safe-bottom))!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .active-skill{transition-duration:.01ms!important;}
+}
