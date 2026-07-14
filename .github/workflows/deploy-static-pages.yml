@@ -34,15 +34,20 @@ jobs:
           set -euo pipefail
           test -f frostblade-survivors/index.html
           test -f frostblade-survivors/styles.css
+          test -f frostblade-survivors/mobile-tuning-v1.3.2.css
+          test -f frostblade-survivors/service-worker.js
           test -f frostblade-survivors/js/main.js
           test -f frostblade-survivors/js/game.js
           test -f frostblade-survivors/js/ui.js
           test -f frostblade-survivors/js/i18n.js
-          grep -q 'v1.3.1' frostblade-survivors/index.html
+          grep -q 'v1.3.2' frostblade-survivors/index.html
+          grep -q 'mobile-tuning-v1.3.2.css?v=1.3.2' frostblade-survivors/index.html
+          grep -q "version: '1.3.2'" frostblade-survivors/js/main.js
+          grep -q "frostblade-survivors-v1.3.2" frostblade-survivors/service-worker.js
           grep -q '__FROSTBLADE_GAME__' frostblade-survivors/js/main.js
           ! grep -q 'DecompressionStream' frostblade-survivors/index.html
           ! grep -q 'payload-v131' frostblade-survivors/index.html
-          for file in frostblade-survivors/js/*.js; do node --check "$file"; done
+          for file in frostblade-survivors/js/*.js frostblade-survivors/service-worker.js; do node --check "$file"; done
 
           python3 -m http.server 8123 --directory . >/tmp/frostblade-http.log 2>&1 &
           server_pid=$!
@@ -52,8 +57,11 @@ jobs:
             sleep 0.25
           done
           grep -q '霜刃幸存者' /tmp/frostblade-index.html
+          grep -q 'v1.3.2' /tmp/frostblade-index.html
           curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/styles.css >/dev/null
+          curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/mobile-tuning-v1.3.2.css >/dev/null
           curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/js/main.js >/dev/null
+          curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/js/input.js >/dev/null
           curl --fail --silent http://127.0.0.1:8123/frostblade-survivors/js/i18n.js >/dev/null
 
       - name: Configure Pages
@@ -75,22 +83,30 @@ jobs:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -euo pipefail
-          game_url="${PAGE_URL%/}/frostblade-survivors/?v=1.3.1-static-${GITHUB_RUN_ID}"
-          index_url="${PAGE_URL%/}/frostblade-survivors/index.html?v=1.3.1-static-${GITHUB_RUN_ID}"
-          css_url="${PAGE_URL%/}/frostblade-survivors/styles.css?v=1.3.1-static-${GITHUB_RUN_ID}"
-          main_url="${PAGE_URL%/}/frostblade-survivors/js/main.js?v=1.3.1-static-${GITHUB_RUN_ID}"
-          i18n_url="${PAGE_URL%/}/frostblade-survivors/js/i18n.js?v=1.3.1-static-${GITHUB_RUN_ID}"
-          legacy_url="${PAGE_URL%/}/frostblade-survivors/v131-fixed/?v=1.3.1-static-${GITHUB_RUN_ID}"
+          build="1.3.2-static-${GITHUB_RUN_ID}"
+          game_url="${PAGE_URL%/}/frostblade-survivors/?v=${build}"
+          index_url="${PAGE_URL%/}/frostblade-survivors/index.html?v=${build}"
+          css_url="${PAGE_URL%/}/frostblade-survivors/styles.css?v=${build}"
+          tuning_url="${PAGE_URL%/}/frostblade-survivors/mobile-tuning-v1.3.2.css?v=${build}"
+          main_url="${PAGE_URL%/}/frostblade-survivors/js/main.js?v=${build}"
+          input_url="${PAGE_URL%/}/frostblade-survivors/js/input.js?v=${build}"
+          i18n_url="${PAGE_URL%/}/frostblade-survivors/js/i18n.js?v=${build}"
+          legacy_url="${PAGE_URL%/}/frostblade-survivors/v131-fixed/?v=${build}"
 
           success=0
           for attempt in {1..40}; do
             if curl --fail --location --silent --show-error --max-time 20 "$index_url" -o /tmp/public-index.html \
               && grep -q '霜刃幸存者' /tmp/public-index.html \
-              && grep -q 'styles.css?v=1.3.1' /tmp/public-index.html \
+              && grep -q 'v1.3.2' /tmp/public-index.html \
+              && grep -q 'mobile-tuning-v1.3.2.css?v=1.3.2' /tmp/public-index.html \
               && curl --fail --silent --show-error --max-time 20 "$css_url" -o /tmp/public-styles.css \
+              && curl --fail --silent --show-error --max-time 20 "$tuning_url" -o /tmp/public-tuning.css \
               && curl --fail --silent --show-error --max-time 20 "$main_url" -o /tmp/public-main.js \
+              && curl --fail --silent --show-error --max-time 20 "$input_url" -o /tmp/public-input.js \
               && curl --fail --silent --show-error --max-time 20 "$i18n_url" -o /tmp/public-i18n.js \
-              && grep -q '__FROSTBLADE_GAME__' /tmp/public-main.js \
+              && grep -q "version: '1.3.2'" /tmp/public-main.js \
+              && grep -q 'pointerrawupdate' /tmp/public-input.js \
+              && grep -q 'active-skill.pressed' /tmp/public-tuning.css \
               && grep -q 'zh-CN' /tmp/public-i18n.js; then
                 success=1
                 break
@@ -101,10 +117,12 @@ jobs:
 
           curl --fail --location --silent --show-error --max-time 20 "$game_url" -o /tmp/public-root.html
           grep -q '霜刃幸存者' /tmp/public-root.html
+          grep -q 'v1.3.2' /tmp/public-root.html
           curl --fail --location --silent --show-error --max-time 20 "$legacy_url" -o /tmp/public-legacy.html
           grep -q '霜刃幸存者' /tmp/public-legacy.html
 
           node --check /tmp/public-main.js
+          node --check /tmp/public-input.js
           node --check /tmp/public-i18n.js
           echo "game_url=$game_url" >> "$GITHUB_OUTPUT"
 
@@ -120,7 +138,7 @@ jobs:
             "page_url": "${{ steps.deployment.outputs.page_url }}",
             "game_url": "${{ steps.smoke.outputs.game_url }}",
             "game_path": "frostblade-survivors/",
-            "game_version": "1.3.1-static"
+            "game_version": "1.3.2-static"
           }
           JSON
           git config user.name "github-actions[bot]"
