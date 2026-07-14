@@ -1,8 +1,9 @@
-const CACHE = 'frostblade-survivors-v1.3.1';
+const CACHE = 'frostblade-survivors-v1.3.2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './mobile-tuning-v1.3.2.css',
   './manifest.webmanifest',
   './js/config.js',
   './js/storage.js',
@@ -34,12 +35,28 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response?.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then(cache => cache.put('./index.html', copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match('./index.html')),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
       if (!response || response.status !== 200 || response.type === 'opaque') return response;
       const copy = response.clone();
       caches.open(CACHE).then(cache => cache.put(event.request, copy));
       return response;
-    }).catch(() => event.request.mode === 'navigate' ? caches.match('./index.html') : undefined)),
+    })),
   );
 });
