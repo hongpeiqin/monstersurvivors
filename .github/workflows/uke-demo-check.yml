@@ -1,0 +1,33 @@
+name: Verify Uke Studio demo
+on:
+  push:
+    branches: [uke-studio-demo]
+    paths:
+      - 'uke-studio/**'
+      - '.github/workflows/uke-demo-check.yml'
+permissions: {}
+jobs:
+  verify-static-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify published HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://rawcdn.githack.com/hongpeiqin/monstersurvivors/f86d2045906e439851962aa194ed3aacb0d5c53f/uke-studio/index.html'
+          curl --fail --show-error --silent --location --max-time 45 --retry 2 --dump-header /tmp/uke-headers.txt "$url" --output /tmp/uke-index.html
+          cat /tmp/uke-headers.txt
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          data = Path('/tmp/uke-index.html').read_bytes()
+          expected = '668bec00751a6387cd1476ff92f3efe1709584cc'
+          actual = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          print('Published bytes:', len(data))
+          print('Expected blob:', expected)
+          print('Actual blob:', actual)
+          assert actual == expected, 'Published file differs from browser-tested build'
+          assert b'transcribe' in data and b'pitchWorkerSource' in data
+          print('PASS: online demo returns the exact tested application')
+          PY
